@@ -31,5 +31,6 @@ jobs:
     - name: Run Tests
       env:
         PUBLIC_IPv4: ${{ secrets.PUBLIC_IPv4 }}
+        LOCAL_HOST: ${{ secrets.LOCAL_HOST }}
       run: |
         python manage.py test
