@@ -2,13 +2,16 @@ name: Django CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: 
+      - "main"
+      - "release"
   pull_request:
-    branches: [ "main" ]
+    branches: 
+      - "main"
+      - "release"
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 4
@@ -26,5 +29,8 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     - name: Run Tests
+      env:
+        PUBLIC_IPv4: ${{ secrets.PUBLIC_IPv4 }}
+        LOCAL_HOST: ${{ secrets.LOCAL_HOST }}
       run: |
         python manage.py test
