@@ -14,8 +14,9 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 SECRET_KEY = "django-insecure-zmm*ei!4jk6orp+-qj(qz*jtr3#n$aez+z7*+scjs0e7+q9gqk"
 DEBUG = True
 PUBLIC_IPv4 = env('PUBLIC_IPv4')
+LOCAL_HOST = env('LOCAL_HOST')
 
-ALLOWED_HOSTS = [PUBLIC_IPv4, '127.0.0.1']
+ALLOWED_HOSTS = [PUBLIC_IPv4, LOCAL_HOST]
 
 
 # Application definition
