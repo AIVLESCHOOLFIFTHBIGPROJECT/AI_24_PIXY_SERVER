@@ -1,12 +1,9 @@
 from pathlib import Path
-import environ
 import json
 import sys
 import os
-
-env = environ.Env(
-    DEBUG = (bool, False)
-)
+import pymysql
+pymysql.install_as_MySQLdb()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 ROOT_DIR = os.path.dirname(BASE_DIR)
@@ -15,14 +12,18 @@ secrets = json.loads(open(SECRET_BASE_FILE).read())
 for key,value in secrets.items():
     setattr(sys.modules[__name__], key, value)
 
-environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 SECRET_KEY = "django-insecure-zmm*ei!4jk6orp+-qj(qz*jtr3#n$aez+z7*+scjs0e7+q9gqk"
 DEBUG = True
-PUBLIC_IPv4 = env('PUBLIC_IPv4')
-LOCAL_HOST = env('LOCAL_HOST')
+# import environ
+# env = environ.Env(
+#     DEBUG = (bool, False)
+# )
+# environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+# PUBLIC_IPv4 = env('PUBLIC_IPv4')
+# LOCAL_HOST = env('LOCAL_HOST')
 
-ALLOWED_HOSTS = [PUBLIC_IPv4, LOCAL_HOST]
+# ALLOWED_HOSTS = [PUBLIC_IPv4, LOCAL_HOST]
 
 
 # Application definition
@@ -150,3 +151,6 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': True,
 }
+# 이미지 추가
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
