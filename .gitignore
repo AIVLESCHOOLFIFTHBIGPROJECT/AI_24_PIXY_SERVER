@@ -11,7 +11,6 @@ __pycache__/
 *.pyc
 db.sqlite3
 media/
-secrets.json
 
 # 가상 환경
 venv/
