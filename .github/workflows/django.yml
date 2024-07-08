@@ -37,6 +37,7 @@ jobs:
         DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
         DATABASE_HOST: ${{ secrets.DATABASE_HOST }}
         DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
+        DOMAIN: ${{ secrets.DOMAIN }}
         PUBLIC_IPv4: ${{ secrets.PUBLIC_IPv4 }}
         LOCAL_HOST: ${{ secrets.LOCAL_HOST }}
       run: |
