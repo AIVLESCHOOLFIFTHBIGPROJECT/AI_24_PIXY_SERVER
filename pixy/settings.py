@@ -1,10 +1,13 @@
 from pathlib import Path
-import json
-import sys
-import os
+import environ
+import sys, os, json
 import pymysql
-pymysql.install_as_MySQLdb()
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+
+# environ 설정
+env = environ.Env(
+    DEBUG = (bool, False)
+)
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 ROOT_DIR = os.path.dirname(BASE_DIR)
 SECRET_BASE_FILE = os.path.join(BASE_DIR, 'secrets.json')
@@ -12,12 +15,11 @@ secrets = json.loads(open(SECRET_BASE_FILE).read())
 for key,value in secrets.items():
     setattr(sys.modules[__name__], key, value)
 
-DEBUG = True
-import environ
-env = environ.Env(
-    DEBUG = (bool, False)
-)
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+pymysql.install_as_MySQLdb()
+
+SECRET_KEY = env('SECRET_KEY')
+DEBUG = env.bool('DEBUG', default=False)
 PUBLIC_IPv4 = env('PUBLIC_IPv4')
 LOCAL_HOST = env('LOCAL_HOST')
 
@@ -37,6 +39,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
+    'drf_yasg',
 ]
 
 MIDDLEWARE = [
@@ -72,15 +75,14 @@ WSGI_APPLICATION = "pixy.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
-        "NAME": "pixy",
-        "USER" : "root",
-        "PASSWORD" : "aivle",
-        "HOST" : "localhost",
-        "PORT" : "3306",
+        "NAME": env('DATABASE_NAME'),
+        "USER": env('DATABASE_USERNAME'),
+        "PASSWORD": env('DATABASE_PASSWORD'),
+        "HOST": env('DATABASE_HOST'),
+        "PORT": env('DATABASE_PORT'),
     }
 }
 
@@ -132,8 +134,8 @@ AUTH_USER_MODEL = 'accounts.User' # 커스텀 유저를 장고에서 사용하�
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',  # 인증된 요청인지 확인
-        'rest_framework.permissions.IsAdminUser',  # 관리자만 접근 가능
-        'rest_framework.permissions.AllowAny',  # 누구나 접근 가능
+        # 'rest_framework.permissions.IsAdminUser',  # 관리자만 접근 가능
+        # 'rest_framework.permissions.AllowAny',  # 누구나 접근 가능
     ),
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',  # JWT를 통한 인증방식 사용
@@ -144,7 +146,7 @@ REST_USE_JWT = True
 
 from datetime import timedelta
 SIMPLE_JWT = {
-    'SIGNING_KEY': secrets["SECRET_KEY"],
+    'SIGNING_KEY': env('SECRET_KEY'),
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     # True로 설정할 경우, refresh token을 보내면 새로운 access token과 refresh token이 반환된다.
