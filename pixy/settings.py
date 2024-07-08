@@ -14,10 +14,11 @@ pymysql.install_as_MySQLdb()
 
 SECRET_KEY = env('SECRET_KEY')
 DEBUG = env.bool('DEBUG', default=False)
+DOMAIN = env('DOMAIN')
 PUBLIC_IPv4 = env('PUBLIC_IPv4')
 LOCAL_HOST = env('LOCAL_HOST')
 
-ALLOWED_HOSTS = [PUBLIC_IPv4, LOCAL_HOST]
+ALLOWED_HOSTS = [DOMAIN, PUBLIC_IPv4, LOCAL_HOST]
 
 
 # Application definition
