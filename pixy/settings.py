@@ -13,7 +13,7 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 pymysql.install_as_MySQLdb()
 
 SECRET_KEY = env('SECRET_KEY')
-DEBUG = env('DEBUG')
+DEBUG = env.bool('DEBUG', default=False)
 PUBLIC_IPv4 = env('PUBLIC_IPv4')
 LOCAL_HOST = env('LOCAL_HOST')
 
@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
+    'drf_yasg',
 ]
 
 MIDDLEWARE = [
@@ -127,8 +128,8 @@ AUTH_USER_MODEL = 'accounts.User' # 커스텀 유저를 장고에서 사용하�
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',  # 인증된 요청인지 확인
-        'rest_framework.permissions.IsAdminUser',  # 관리자만 접근 가능
-        'rest_framework.permissions.AllowAny',  # 누구나 접근 가능
+        # 'rest_framework.permissions.IsAdminUser',  # 관리자만 접근 가능
+        # 'rest_framework.permissions.AllowAny',  # 누구나 접근 가능
     ),
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',  # JWT를 통한 인증방식 사용
