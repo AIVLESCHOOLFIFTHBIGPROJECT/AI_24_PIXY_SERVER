@@ -14,7 +14,7 @@ schema_view = get_schema_view(
       description="API documentation for Pixy project",
       terms_of_service="https://www.yourapp.com/terms/",
       contact=openapi.Contact(email="contact@yourapp.com"),
-      license=openapi.License(name="Your License"),
+      license=openapi.License(name="KT Aivle AI 24 License"),
    ),
    public=True,
    permission_classes=[permissions.AllowAny],
