@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     
     'accounts',
     'post',
+    'product',
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
