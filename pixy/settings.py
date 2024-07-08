@@ -1,29 +1,23 @@
 from pathlib import Path
-import json
-import sys
+import environ
 import os
 import pymysql
-pymysql.install_as_MySQLdb()
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+
+# environ 설정
+env = environ.Env(
+    DEBUG = (bool, False)
+)
+
 BASE_DIR = Path(__file__).resolve().parent.parent
-ROOT_DIR = os.path.dirname(BASE_DIR)
-SECRET_BASE_FILE = os.path.join(BASE_DIR, 'secrets.json')
-secrets = json.loads(open(SECRET_BASE_FILE).read())
-for key,value in secrets.items():
-    setattr(sys.modules[__name__], key, value)
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+pymysql.install_as_MySQLdb()
 
+SECRET_KEY = env('SECRET_KEY')
+DEBUG = env('DEBUG')
+PUBLIC_IPv4 = env('PUBLIC_IPv4')
+LOCAL_HOST = env('LOCAL_HOST')
 
-SECRET_KEY = "django-insecure-zmm*ei!4jk6orp+-qj(qz*jtr3#n$aez+z7*+scjs0e7+q9gqk"
-DEBUG = True
-# import environ
-# env = environ.Env(
-#     DEBUG = (bool, False)
-# )
-# environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
-# PUBLIC_IPv4 = env('PUBLIC_IPv4')
-# LOCAL_HOST = env('LOCAL_HOST')
-
-# ALLOWED_HOSTS = [PUBLIC_IPv4, LOCAL_HOST]
+ALLOWED_HOSTS = [PUBLIC_IPv4, LOCAL_HOST]
 
 
 # Application definition
@@ -73,15 +67,14 @@ WSGI_APPLICATION = "pixy.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
-        "NAME": "pixy",
-        "USER" : "root",
-        "PASSWORD" : "aivle",
-        "HOST" : "localhost",
-        "PORT" : "3306",
+        "NAME": env('DATABASE_NAME'),
+        "USER": env('DATABASE_USERNAME'),
+        "PASSWORD": env('DATABASE_PASSWORD'),
+        "HOST": env('DATABASE_HOST'),
+        "PORT": env('DATABASE_PORT'),
     }
 }
 
@@ -145,7 +138,7 @@ REST_USE_JWT = True
 
 from datetime import timedelta
 SIMPLE_JWT = {
-    'SIGNING_KEY': secrets["SECRET_KEY"],
+    'SIGNING_KEY': env('SECRET_KEY'),
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': False,
