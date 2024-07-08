@@ -14,14 +14,10 @@ def main(runtype, path):
     data=pd.read_csv(path)
 
     if runtype=='train':
-        model=train_model()
-        #학습 돌리고 평가
-        torch.save(model.state_dict(), 'weights.pth')
-
+        model=train_model(data)
     elif runtype=='predict':
-        model=train_model()
-        model.load_state_dict(torch.load('weights.pth'))
-        prediction=predict_model(model, data)
+        prediction=predict_model(data)
+        print(prediction)
 
         #필요에따라 출력 바꾸면 됨
 
