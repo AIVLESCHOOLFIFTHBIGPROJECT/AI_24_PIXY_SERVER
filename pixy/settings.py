@@ -1,14 +1,9 @@
 from pathlib import Path
-import environ
 import json
 import sys
 import os
-import pymysql  
+import pymysql
 pymysql.install_as_MySQLdb()
-
-# env = environ.Env(
-#     DEBUG = (bool, False)
-# )
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 ROOT_DIR = os.path.dirname(BASE_DIR)
@@ -17,10 +12,14 @@ secrets = json.loads(open(SECRET_BASE_FILE).read())
 for key,value in secrets.items():
     setattr(sys.modules[__name__], key, value)
 
-# environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 SECRET_KEY = "django-insecure-zmm*ei!4jk6orp+-qj(qz*jtr3#n$aez+z7*+scjs0e7+q9gqk"
 DEBUG = True
+# import environ
+# env = environ.Env(
+#     DEBUG = (bool, False)
+# )
+# environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 # PUBLIC_IPv4 = env('PUBLIC_IPv4')
 # LOCAL_HOST = env('LOCAL_HOST')
 
@@ -37,7 +36,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     
     'accounts',
-    'post',
+    'post'
     'rest_framework',
     'rest_framework_simplejwt',
 ]
@@ -80,9 +79,9 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
         "NAME": "pixy",
-        "USER" : "newuser",
-        "PASSWORD" : "aivle202405@",
-        "HOST" : "172.30.1.52",
+        "USER" : "root",
+        "PASSWORD" : "aivle",
+        "HOST" : "localhost",
         "PORT" : "3306",
     }
 }
@@ -112,13 +111,11 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "Asia/Seoul"
+TIME_ZONE = "UTC"
 
 USE_I18N = True
 
-
-USE_TZ = False
-
+USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
@@ -155,4 +152,6 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': True,
 }
-
+# 이미지 추가
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
