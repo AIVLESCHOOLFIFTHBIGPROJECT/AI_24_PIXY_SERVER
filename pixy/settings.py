@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'accounts',
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
 ]
 
 MIDDLEWARE = [
@@ -141,7 +142,9 @@ SIMPLE_JWT = {
     'SIGNING_KEY': env('SECRET_KEY'),
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    # True로 설정할 경우, refresh token을 보내면 새로운 access token과 refresh token이 반환된다.
     'ROTATE_REFRESH_TOKENS': False,
+    # True로 설정될 경우, 기존에 있던 refresh token은 blacklist가된다.
     'BLACKLIST_AFTER_ROTATION': True,
 }
 # 이미지 추가

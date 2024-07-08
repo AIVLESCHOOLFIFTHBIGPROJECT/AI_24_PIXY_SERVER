@@ -5,7 +5,7 @@ from uuid import uuid4
 from django.utils import timezone
 
 class UserManager(BaseUserManager):
-    def create_user(self, email, name, p_num, r_num, password=None, bussiness_r=None):
+    def create_user(self, email, name, p_num, r_num, password=None, business_r=None):
         user = self.model(
             email=self.normalize_email(email),
             name=name,
@@ -13,8 +13,8 @@ class UserManager(BaseUserManager):
             r_num=r_num
         )
 
-        if bussiness_r:
-            user.bussiness_r = bussiness_r
+        if business_r:
+            user.business_r = business_r
 
         user.set_password(password)
         user.save(using=self._db)
@@ -54,7 +54,7 @@ class User(AbstractBaseUser):
     name = models.CharField(max_length=30)
     p_num = models.CharField(max_length=30)
     r_num = models.CharField(max_length=30)
-    bussiness_r = models.ImageField("사업자등록증", upload_to=date_upload_to, blank=True, null=True)
+    business_r = models.ImageField("사업자등록증", upload_to=date_upload_to, blank=True, null=True)
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
     # 동의여부(개인정보동의, 우리약관, 이메일수신 -> 선택사항)
