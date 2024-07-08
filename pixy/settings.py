@@ -12,18 +12,16 @@ secrets = json.loads(open(SECRET_BASE_FILE).read())
 for key,value in secrets.items():
     setattr(sys.modules[__name__], key, value)
 
-
-SECRET_KEY = "django-insecure-zmm*ei!4jk6orp+-qj(qz*jtr3#n$aez+z7*+scjs0e7+q9gqk"
 DEBUG = True
-# import environ
-# env = environ.Env(
-#     DEBUG = (bool, False)
-# )
-# environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
-# PUBLIC_IPv4 = env('PUBLIC_IPv4')
-# LOCAL_HOST = env('LOCAL_HOST')
+import environ
+env = environ.Env(
+    DEBUG = (bool, False)
+)
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+PUBLIC_IPv4 = env('PUBLIC_IPv4')
+LOCAL_HOST = env('LOCAL_HOST')
 
-# ALLOWED_HOSTS = [PUBLIC_IPv4, LOCAL_HOST]
+ALLOWED_HOSTS = [PUBLIC_IPv4, LOCAL_HOST]
 
 
 # Application definition
