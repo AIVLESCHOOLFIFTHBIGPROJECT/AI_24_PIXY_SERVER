@@ -1,6 +1,6 @@
 from pathlib import Path
 import environ
-import os
+import sys, os, json
 import pymysql
 
 # environ 설정
