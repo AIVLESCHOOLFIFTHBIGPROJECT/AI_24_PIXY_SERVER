@@ -141,7 +141,7 @@ def delete_user(request):
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
-# 아이디 찾기
+# 아이디(이메일) 찾기
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def find_userid(request):
