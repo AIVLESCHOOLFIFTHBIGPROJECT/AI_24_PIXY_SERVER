@@ -51,7 +51,7 @@ jobs:
           ls -l ~/  # Debug: 홈 디렉토리 파일 목록 확인
           echo "" > .env  # Clear existing .env file
           if [ -f ~/env_vars.json ]; then
-            jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\") | .[]" ~/env_vars.json >> .env &&
+            jq -r 'to_entries | map("\(.key)='\''\\(.value|tostring)'\''") | .[]' ~/env_vars.json >> .env &&
             rm ~/env_vars.json
           else
             echo "env_vars.json not found"
