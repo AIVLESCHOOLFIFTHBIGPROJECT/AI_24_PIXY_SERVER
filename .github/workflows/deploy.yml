@@ -32,6 +32,11 @@ jobs:
         GITHUB_IP=$(curl -s https://api.github.com/meta | jq -r '.actions[0]')
         aws ec2 authorize-security-group-ingress --group-id ${{ secrets.EC2_SECURITY_GROUP_ID }} --protocol tcp --port 22 --cidr $GITHUB_IP
 
+    - name: Prepare environment variables
+      run: |
+        echo '${{ toJson(secrets) }}' > env_vars.json
+        cat env_vars.json  # Debug: 파일 내용 확인
+
     - name: Deploy to EC2
       env:
         PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
@@ -39,12 +44,19 @@ jobs:
         USER: ${{ secrets.EC2_USER }}
       run: |
         echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
+        ls -l  # Debug: 현재 디렉토리 파일 목록 확인
         scp -o StrictHostKeyChecking=no -i private_key env_vars.json ${USER}@${HOST}:~/env_vars.json
         ssh -o StrictHostKeyChecking=no -i private_key ${USER}@${HOST} '
           cd /home/ubuntu/deploy/AI_24_PIXY_SERVER &&
+          ls -l ~/  # Debug: 홈 디렉토리 파일 목록 확인
           echo "" > .env  # Clear existing .env file
-          jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\") | .[]" ~/env_vars.json >> .env &&
-          rm ~/env_vars.json &&
+          if [ -f ~/env_vars.json ]; then
+            jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\") | .[]" ~/env_vars.json >> .env &&
+            rm ~/env_vars.json
+          else
+            echo "env_vars.json not found"
+            exit 1
+          fi &&
           git pull origin main &&
           source /home/ubuntu/big-project/bin/activate &&
           pip install -r requirements.txt &&
