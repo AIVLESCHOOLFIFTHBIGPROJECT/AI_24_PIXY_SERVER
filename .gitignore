@@ -23,3 +23,7 @@ env/
 # 운영체제 관련 파일
 .DS_Store
 Thumbs.db
+
+# 정적 파일 디렉토리
+/staticfiles/
+/static/
