@@ -39,7 +39,7 @@ jobs:
         USER: ${{ secrets.EC2_USER }}
       run: |
         echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-        ssh -o StrictHostKeyChecking=no -i private_key ${USER}@${HOST} '
+        ssh -v -o StrictHostKeyChecking=no -i private_key ${USER}@${HOST} '
           cd /home/ubuntu/deploy/AI_24_PIXY_SERVER &&
           git pull origin main &&
           source /home/ubuntu/big-project/bin/activate &&
