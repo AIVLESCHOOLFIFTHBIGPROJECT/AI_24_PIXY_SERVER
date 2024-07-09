@@ -5,17 +5,11 @@ from uuid import uuid4
 from django.utils import timezone
 
 class UserManager(BaseUserManager):
-    def create_user(self, email, name, p_num, r_num, password=None, business_r=None):
+    def create_user(self, email, name, password=None):
         user = self.model(
             email=self.normalize_email(email),
             name=name,
-            p_num=p_num,
-            r_num=r_num
         )
-
-        if business_r:
-            user.business_r = business_r
-
         user.set_password(password)
         user.save(using=self._db)
         return user
@@ -65,7 +59,7 @@ class User(AbstractBaseUser):
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['name', 'p_num', 'r_num']
+    REQUIRED_FIELDS = ['name']
 
     def __str__(self):
         return self.email
