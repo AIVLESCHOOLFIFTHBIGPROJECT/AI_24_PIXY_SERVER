@@ -70,14 +70,14 @@ def login(request):
         value=str(refresh.access_token),
         httponly=True,
         secure=True,  # HTTPS를 사용할 경우 True로 설정
-        samesite=None
+        samesite='Lax'
     )
     response.set_cookie(
         key='refresh_token',
         value=str(refresh),
         httponly=True,
         secure=True,  # HTTPS를 사용할 경우 True로 설정
-        samesite=None
+        samesite='Lax'
     )
     update_last_login(None, user)
     return response
