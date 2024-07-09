@@ -49,9 +49,6 @@ class Migration(migrations.Migration):
                 ),
                 ("is_active", models.BooleanField(default=True)),
                 ("is_admin", models.BooleanField(default=False)),
-                ("is_agreement1", models.BooleanField(default=False)),
-                ("is_agreement2", models.BooleanField(default=False)),
-                ("is_agreement3", models.BooleanField(default=False, null=True)),
             ],
             options={
                 "db_table": "user",
