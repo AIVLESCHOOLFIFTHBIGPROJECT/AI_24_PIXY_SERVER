@@ -27,6 +27,11 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ env.AWS_REGION }}
 
+    - name: Add GitHub Actions IP to Security Group
+      run: |
+        GITHUB_IP=$(curl -s https://api.github.com/meta | jq -r '.actions[0]')
+        aws ec2 authorize-security-group-ingress --group-id ${{ secrets.EC2_SECURITY_GROUP_ID }} --protocol tcp --port 22 --cidr $GITHUB_IP
+
     - name: Deploy to EC2
       env:
         PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
@@ -53,3 +58,9 @@ jobs:
           exit 1
         fi
         echo "Health check passed"
+
+    - name: Remove GitHub Actions IP from Security Group
+      if: always()
+      run: |
+        GITHUB_IP=$(curl -s https://api.github.com/meta | jq -r '.actions[0]')
+        aws ec2 revoke-security-group-ingress --group-id ${{ secrets.EC2_SECURITY_GROUP_ID }} --protocol tcp --port 22 --cidr $GITHUB_IP
