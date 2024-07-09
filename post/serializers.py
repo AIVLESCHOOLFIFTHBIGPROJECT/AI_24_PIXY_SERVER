@@ -4,10 +4,10 @@ from .models import Qna,Answer
 class QnaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Qna
-        fields = '__all__'
+        fields = ('b_num','m_num','title','c_date','m_date','viewcnt')
         
 
 class AnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Answer
-        fields = '__all__'
+        fields = ('a_num','b_num','m_num','content','c_date','m_date')
