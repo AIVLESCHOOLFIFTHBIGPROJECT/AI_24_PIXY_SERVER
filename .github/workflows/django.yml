@@ -37,7 +37,15 @@ jobs:
         DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
         DATABASE_HOST: ${{ secrets.DATABASE_HOST }}
         DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
+        DOMAIN: ${{ secrets.DOMAIN }}
         PUBLIC_IPv4: ${{ secrets.PUBLIC_IPv4 }}
         LOCAL_HOST: ${{ secrets.LOCAL_HOST }}
+        EMAIL_BACKEND: ${{ secrets.EMAIL_BACKEND }}
+        EMAIL_PORT: ${{ secrets.EMAIL_PORT }}
+        EMAIL_HOST: ${{ secrets.EMAIL_HOST }}
+        EMAIL_HOST_USER: ${{ secrets.EMAIL_HOST_USER }}
+        EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
+        EMAIL_USE_TLS: ${{ secrets.EMAIL_USE_TLS }}
+        DEFAULT_FROM_EMAIL: ${{ secrets.DEFAULT_FROM_EMAIL }}
       run: |
         python manage.py test

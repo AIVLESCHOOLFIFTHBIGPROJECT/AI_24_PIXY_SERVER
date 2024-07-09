@@ -51,7 +51,7 @@ def signup(request):
 def login(request):
     email = request.data.get('email')
     password = request.data.get('password')
-    # 보안상의 이유로 아이디와 비밀번호를 통일해서 오류메시지 날림
+    # 아이디와 비밀번호를 통일해서 오류 메시지를 날리는 것이 보안상 좋다.
     user = authenticate(email=email, password=password)
     if user is None:
         return Response({'message': '아이디 또는 비밀번호가 일치하지 않습니다.'}, status=status.HTTP_401_UNAUTHORIZED)
@@ -114,15 +114,9 @@ def profile(request):
         data['business_r'] = uploaded_file
         serializer = UserInfoSerializer(request.user, data=data, partial=True)
         if serializer.is_valid():
-            # 기존에 있던 refresh_token은 blacklist에 넣자.
-            refresh_token = request.data.get("refresh_token")
-            token = RefreshToken(refresh_token)
-            token.blacklist()
-            # 새로운 token을 발급받자
-            refresh = RefreshToken.for_user(request.user)
             # Update
             serializer.save()
-            return Response({'serializer':serializer.data , 'refresh_token': str(refresh), 'access_token': str(refresh.access_token)},
+            return Response({'serializer':serializer.data},
                             status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -154,7 +148,6 @@ def find_userid(request):
     target_email = request.data.get('email')
     User = get_user_model()
     user = User.objects.filter(email=target_email)
-    print(user)
     if not user.exists():
         return Response({'message': '해당 아이디는 존재하지 않습니다.'}, status=status.HTTP_400_BAD_REQUEST)
     data = {'email' : user.first().email}

@@ -14,10 +14,11 @@ pymysql.install_as_MySQLdb()
 
 SECRET_KEY = env('SECRET_KEY')
 DEBUG = env.bool('DEBUG', default=False)
+DOMAIN = env('DOMAIN')
 PUBLIC_IPv4 = env('PUBLIC_IPv4')
 LOCAL_HOST = env('LOCAL_HOST')
 
-ALLOWED_HOSTS = [PUBLIC_IPv4, LOCAL_HOST]
+ALLOWED_HOSTS = [DOMAIN, PUBLIC_IPv4, LOCAL_HOST]
 
 
 # Application definition
@@ -85,7 +86,6 @@ DATABASES = {
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
@@ -104,20 +104,16 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
-
 LANGUAGE_CODE = "en-us"
-
 TIME_ZONE = "UTC"
-
 USE_I18N = True
-
 USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
-
 STATIC_URL = "static/"
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -126,7 +122,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # 추가
 AUTH_USER_MODEL = 'accounts.User' # 커스텀 유저를 장고에서 사용하기 위함
-
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',  # 인증된 요청인지 확인
@@ -153,3 +148,14 @@ SIMPLE_JWT = {
 # 이미지 추가
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# 비밀번호 재설정(이메일 수신 : 발신(google))
+EMAIL_BACKEND=env('EMAIL_BACKEND')
+EMAIL_PORT=env('EMAIL_PORT')
+EMAIL_HOST=env('EMAIL_HOST')
+EMAIL_HOST_USER=env('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD=env('EMAIL_HOST_PASSWORD')
+EMAIL_USE_TLS=env('EMAIL_USE_TLS')
+DEFAULT_FROM_EMAIL=env('DEFAULT_FROM_EMAIL')
+EMAIL_USE_TLS=True
+DEFAULT_FROM_EMAIL=EMAIL_HOST_USER
