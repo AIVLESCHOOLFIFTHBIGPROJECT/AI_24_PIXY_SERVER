@@ -37,13 +37,14 @@ jobs:
         PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
         HOST: ${{ secrets.EC2_HOST }}
         USER: ${{ secrets.EC2_USER }}
-        ENV_VARS: ${{ toJson(secrets) }}
       run: |
         echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-        ssh -v -o StrictHostKeyChecking=no -i private_key ${USER}@${HOST} '
+        scp -o StrictHostKeyChecking=no -i private_key env_vars.json ${USER}@${HOST}:~/env_vars.json
+        ssh -o StrictHostKeyChecking=no -i private_key ${USER}@${HOST} '
           cd /home/ubuntu/deploy/AI_24_PIXY_SERVER &&
           echo "" > .env  # Clear existing .env file
-          echo "$ENV_VARS" | jq -r "to_entries|map(\"\(.key)='\(.value|tostring)'\") | .[]" >> .env &&
+          jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\") | .[]" ~/env_vars.json >> .env &&
+          rm ~/env_vars.json &&
           git pull origin main &&
           source /home/ubuntu/big-project/bin/activate &&
           pip install -r requirements.txt &&
