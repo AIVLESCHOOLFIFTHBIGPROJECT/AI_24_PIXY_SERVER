@@ -18,3 +18,4 @@ uritemplate==4.1.1
 dj-rest-auth==6.0.0
 django-allauth==0.63.3
 cryptography==42.0.8
+requests==2.32.3
