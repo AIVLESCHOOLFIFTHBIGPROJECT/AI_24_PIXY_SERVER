@@ -9,11 +9,20 @@ from rest_framework.permissions import AllowAny,IsAdminUser
 from rest_framework.response import Response
 from django.http import Http404
 from rest_framework.parsers import MultiPartParser,FormParser
+from drf_yasg.utils import swagger_auto_schema
 
 
 
 #product
-
+@swagger_auto_schema(
+    method='get',
+    responses={200: ProductSerializer(many=True)},
+)
+@swagger_auto_schema(
+    method='post',
+    request_body=ProductSerializer,
+    responses={201: ProductSerializer, 404: 'Not Found'}
+)
 @api_view(['GET','POST'])
 @permission_classes([AllowAny])
 def ProductList(requset):
@@ -35,6 +44,19 @@ def ProductList(requset):
 
 
 
+@swagger_auto_schema(
+    method='get',
+    responses={200: ProductSerializer}
+)
+@swagger_auto_schema(
+    method='put',
+    request_body=ProductSerializer,
+    responses={200: ProductSerializer, 400: 'Bad Request'}
+)
+@swagger_auto_schema(
+    method='delete',
+    responses={204: 'No Content'}
+)
 @api_view(['GET','PUT','DELETE'])
 @permission_classes([AllowAny])
 def ProductDetail(requset,pk):
@@ -65,7 +87,15 @@ def ProductDetail(requset,pk):
 
 
 #documnet
-
+@swagger_auto_schema(
+    method='get',
+    responses={200: DocumentSerializer(many=True)},
+)
+@swagger_auto_schema(
+    method='post',
+    request_body=DocumentSerializer,
+    responses={201: DocumentSerializer, 404: 'Not Found'}
+)
 @api_view(['GET', 'POST'])
 @permission_classes([AllowAny])
 @parser_classes([MultiPartParser, FormParser])
@@ -81,6 +111,20 @@ def document_list(request):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+@swagger_auto_schema(
+    method='get',
+    responses={200: DocumentSerializer}
+)
+@swagger_auto_schema(
+    method='put',
+    request_body=DocumentSerializer,
+    responses={200: DocumentSerializer, 400: 'Bad Request'}
+)
+@swagger_auto_schema(
+    method='delete',
+    responses={204: 'No Content'}
+)
 @api_view(['GET', 'PUT', 'DELETE'])
 @permission_classes([AllowAny])
 def document_detail(request, pk):
