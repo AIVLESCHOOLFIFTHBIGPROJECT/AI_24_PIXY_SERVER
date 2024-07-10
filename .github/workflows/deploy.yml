@@ -1,0 +1,67 @@
+name: Deploy to Amazon EC2
+
+on:
+  push:
+    branches: [ "main" ]
+
+env:
+  AWS_REGION: ap-northeast-2  # 서울
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Add GitHub Actions IP to Security Group
+      run: |
+        GITHUB_IP=$(curl -s https://api.github.com/meta | jq -r '.actions[0]')
+        aws ec2 authorize-security-group-ingress --group-id ${{ secrets.EC2_SECURITY_GROUP_ID }} --protocol tcp --port 22 --cidr $GITHUB_IP
+
+    - name: Deploy to EC2
+      env:
+        PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
+        HOST: ${{ secrets.EC2_HOST }}
+        USER: ${{ secrets.EC2_USER }}
+      run: |
+        echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
+        ls -l  # Debug: 현재 디렉토리 파일 목록 확인
+        ssh -o StrictHostKeyChecking=no -i private_key ${USER}@${HOST} '
+          cd /home/ubuntu/deploy/AI_24_PIXY_SERVER &&
+          git pull origin main &&
+          source /home/ubuntu/big-project/bin/activate &&
+          pip install -r requirements.txt &&
+          python manage.py migrate --noinput &&
+          python manage.py collectstatic --noinput &&
+          sudo systemctl restart gunicorn &&
+          sudo systemctl restart nginx
+        '
+
+    - name: Health check
+      run: |
+        response=$(curl -sS https://pixy.kro.kr || echo "Failed")
+        if [[ $response == *"Failed"* ]]; then
+          echo "Health check failed"
+          exit 1
+        fi
+        echo "Health check passed"
+
+    - name: Remove GitHub Actions IP from Security Group
+      if: always()
+      run: |
+        GITHUB_IP=$(curl -s https://api.github.com/meta | jq -r '.actions[0]')
+        aws ec2 revoke-security-group-ingress --group-id ${{ secrets.EC2_SECURITY_GROUP_ID }} --protocol tcp --port 22 --cidr $GITHUB_IP
