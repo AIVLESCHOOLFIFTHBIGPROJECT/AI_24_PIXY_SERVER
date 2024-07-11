@@ -47,5 +47,10 @@ jobs:
         EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
         EMAIL_USE_TLS: ${{ secrets.EMAIL_USE_TLS }}
         DEFAULT_FROM_EMAIL: ${{ secrets.DEFAULT_FROM_EMAIL }}
+        SOCIAL_AUTH_GOOGLE_CLIENT_ID: ${{ secrets.SOCIAL_AUTH_GOOGLE_CLIENT_ID }}
+        SOCIAL_AUTH_GOOGLE_SECRET: ${{ secrets.SOCIAL_AUTH_GOOGLE_SECRET }}
+        STATE: ${{ secrets.STATE }}
+        SOCIAL_AUTH_NAVER_CLIENT_ID: ${{ secrets.SOCIAL_AUTH_NAVER_CLIENT_ID }}
+        SOCIAL_AUTH_NAVER_SECRET: ${{ secrets.SOCIAL_AUTH_NAVER_SECRET }}
       run: |
         python manage.py test
