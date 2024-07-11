@@ -16,6 +16,7 @@ from accounts.serializers import UserSerializer, UserInfoSerializer
 import json, os
 from pathlib import Path
 from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
 
 # 구글 소셜로그인 변수 설정
 state = os.environ.get("STATE")
@@ -28,6 +29,7 @@ WHITE_LIST_EXT = [
     '.jpeg',
     '.png'
 ]
+
 # 회원가입
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -35,7 +37,7 @@ def signup(request):
     # 'json' 키에서 데이터 가져오기
     json_data = request.data.get('json')
     data = json.loads(json_data)
-    
+    # print(data)
     # 이미지 파일 가져오기
     uploaded_file = request.FILES.get('business_r')
     if uploaded_file:

@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     
     'accounts',
+    'notice',
     'post',
     'product',
     'rest_framework',
@@ -142,6 +143,8 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',  # JWT를 통한 인증방식 사용
     ),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 3,
 }
 
 REST_USE_JWT = True
@@ -172,6 +175,7 @@ DEFAULT_FROM_EMAIL=EMAIL_HOST_USER
 # 소셜 로그인
 # 사이트는 1개만 사용할 것이라고 명시
 SITE_ID = 1
+
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None # username 필드 사용 x
 ACCOUNT_EMAIL_REQUIRED = True            # email 필드 사용 o
 ACCOUNT_USERNAME_REQUIRED = False        # username 필드 사용 x

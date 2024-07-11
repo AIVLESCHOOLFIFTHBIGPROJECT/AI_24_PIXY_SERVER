@@ -32,8 +32,10 @@ def api_root(request):
 urlpatterns = [
     path('', api_root),
     path('admin/', admin.site.urls),
-    path('api/user/', include('allauth.urls')),
+    # signin, signup 페이지와 기능 제공
+    # path('api/user/', include('allauth.urls')),
     path('api/user/', include('accounts.urls')),
+    path('api/notice/', include('notice.urls')),
     path('api/post/', include('post.urls')),
     path('api/product/', include('product.urls')),
     
