@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'accounts',
     'post',
     'product',
+    'store',
     'rest_framework',
     'rest_framework.authtoken',
     'rest_framework_simplejwt',

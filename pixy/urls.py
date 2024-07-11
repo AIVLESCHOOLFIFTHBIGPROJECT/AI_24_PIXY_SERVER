@@ -36,6 +36,7 @@ urlpatterns = [
     path('api/user/', include('accounts.urls')),
     path('api/post/', include('post.urls')),
     path('api/product/', include('product.urls')),
+    path('api/store/',include('store.urls')),
     
     # Swagger UI
     re_path(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
