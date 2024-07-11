@@ -18,4 +18,12 @@ urlpatterns = [
     path('password_reset_done/', auth_views.PasswordResetDoneView.as_view(), name='password_reset_done'),
     path('password_reset_confirm/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     path('password_reset_done/', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
+    # 구글 소셜 로그인
+    path('google/login/', views.google_login, name='google_login'),
+    path('google/callback/', views.google_callback, name='google_callback'),
+    path('google/login/finish/', views.GoogleLogin.as_view(), name='google_login_todjango'),
+    # 네이버 소셜 로그인
+    path('naver/login/', views.naver_login, name='naver_login'),
+    path('naver/callback/', views.naver_callback, name='naver_callback'),
+    path('naver/login/finish/', views.NaverLogin.as_view(), name='naver_login_todjango'),
 ]
