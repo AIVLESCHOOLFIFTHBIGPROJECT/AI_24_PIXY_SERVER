@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'notice',
     'post',
     'product',
+    'store',
     'rest_framework',
     'rest_framework.authtoken',
     'rest_framework_simplejwt',
@@ -48,6 +49,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
     'allauth.socialaccount.providers.naver',
+    'notifications',
 ]
 
 MIDDLEWARE = [

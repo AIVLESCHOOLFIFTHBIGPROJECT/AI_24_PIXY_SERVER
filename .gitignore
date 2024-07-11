@@ -15,6 +15,7 @@ media/
 # 가상 환경
 venv/
 env/
+aivle_big_project/
 
 # IDE 관련 (선택적)
 .vscode/
