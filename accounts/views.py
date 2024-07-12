@@ -13,10 +13,17 @@ from django.contrib.auth.models import update_last_login
 from django.contrib.auth import get_user_model
 
 from accounts.serializers import UserSerializer, UserInfoSerializer
-import json, os
 from pathlib import Path
 from django.http import HttpResponse
-from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.models import User
+from django.core.mail import send_mail
+from rest_framework import status
+from .models import EmailVerificationCode
+from .serializers import EmailVerificationSerializer, VerifyCodeSerializer, ResetPasswordSerializer
+from django.core.cache import cache
+import json, os
+
+
 
 # 구글 소셜로그인 변수 설정
 state = os.environ.get("STATE")
@@ -173,7 +180,7 @@ def delete_user(request):
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
-# 아이디(이메일) 찾기
+# 아이디(이메일) 찾기(보류)
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def find_userid(request):
@@ -184,6 +191,66 @@ def find_userid(request):
         return Response({'message': '해당 아이디는 존재하지 않습니다.'}, status=status.HTTP_400_BAD_REQUEST)
     data = {'email' : user.first().email}
     return Response(data, status=status.HTTP_200_OK)
+
+# 이메일 인증번호 보내기
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def send_verification_code(request):
+    serializer = EmailVerificationSerializer(data=request.data)
+    if serializer.is_valid():
+        email = serializer.validated_data['email']
+        user = User.objects.filter(email=email).first()
+        if user:
+            # code = EmailVerificationCode.objects.create(user=user)
+            code = str(uuid.uuid4())
+            # 5분 동안 유효
+            cache.set(f'verification_code_{email}', code, timeout=300)
+            message = 'Your verification code is {code}'.format(code=code)
+            send_mail(
+                'Your verification code',
+                message,
+                'foodb244@gmail.com',
+                [email],
+                fail_silently=False,
+            )
+            return Response({'message': 'Verification code sent.'}, status=status.HTTP_200_OK)
+        return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# 이메일 인증코드 확인
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def verify_code(request):
+    serializer = VerifyCodeSerializer(data=request.data)
+    if serializer.is_valid():
+        email = serializer.validated_data['email']
+        code = serializer.validated_data['code']
+        cached_code = cache.get(f'verification_code_{email}')
+        if cached_code and cached_code == str(code):
+            return Response({'message': 'Code verified.'}, status=status.HTTP_200_OK)
+        return Response({'error': 'Invalid or expired code.'}, status=status.HTTP_400_BAD_REQUEST)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# 비밀번호 재설정
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def reset_password(request):
+    serializer = ResetPasswordSerializer(data=request.data)
+    if serializer.is_valid():
+        email = serializer.validated_data['email']
+        code = serializer.validated_data['code']
+        new_password = serializer.validated_data['new_password']
+        cached_code = cache.get(f'verification_code_{email}')
+        if cached_code and cached_code == str(code):
+            user = User.objects.filter(email=email).first()
+            if user:
+                user.set_password(new_password)
+                user.save()
+                cache.delete(f'verification_code_{email}')  # 사용 후 코드 삭제
+                return Response({'message': 'Password reset successfully.'}, status=status.HTTP_200_OK)
+            return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'error': 'Invalid or expired code.'}, status=status.HTTP_400_BAD_REQUEST)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # 소셜 로그인(구글)
 from django.shortcuts import redirect
