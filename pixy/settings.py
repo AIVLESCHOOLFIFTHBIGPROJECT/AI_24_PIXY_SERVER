@@ -84,6 +84,13 @@ TEMPLATES = [
 WSGI_APPLICATION = "pixy.wsgi.application"
 
 
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379",
+    }
+}
+
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 DATABASES = {
@@ -185,3 +192,4 @@ ACCOUNT_AUTHENTICATION_METHOD = 'email'
 SOCIAL_AUTH_GOOGLE_CLIENT_ID = env('SOCIAL_AUTH_GOOGLE_CLIENT_ID')
 SOCIAL_AUTH_GOOGLE_SECRET = env('SOCIAL_AUTH_GOOGLE_SECRET')
 STATE = env('STATE')
+
