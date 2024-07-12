@@ -10,18 +10,23 @@ from rest_framework.response import Response
 from django.http import Http404
 from rest_framework.parsers import MultiPartParser,FormParser
 from drf_yasg.utils import swagger_auto_schema
-
-
+from drf_yasg import openapi
 
 #product
 @swagger_auto_schema(
     method='get',
+    tags=['Product'],
+    operation_summary="List all products",
+    operation_description="Get a list of all product entries",
     responses={200: ProductSerializer(many=True)},
 )
 @swagger_auto_schema(
     method='post',
+    tags=['Product'],
+    operation_summary="Create a new product",
+    operation_description="Create a new product entry",
     request_body=ProductSerializer,
-    responses={201: ProductSerializer, 404: 'Not Found'}
+    responses={201: ProductSerializer, 400: 'Bad Request'}
 )
 @api_view(['GET','POST'])
 @permission_classes([AllowAny])
@@ -42,20 +47,28 @@ def ProductList(requset):
             return Response(serializer.data,status=201)
         return Response(serializer.errors,status=404)
 
-
-
+### ProductDetail ###
 @swagger_auto_schema(
     method='get',
-    responses={200: ProductSerializer}
+    tags=['Product'],
+    operation_summary="Retrieve a product",
+    operation_description="Get details of a specific product entry",
+    responses={200: ProductSerializer, 404: 'Not Found'}
 )
 @swagger_auto_schema(
     method='put',
+    tags=['Product'],
+    operation_summary="Update a product",
+    operation_description="Update an existing product entry",
     request_body=ProductSerializer,
-    responses={200: ProductSerializer, 400: 'Bad Request'}
+    responses={200: ProductSerializer, 400: 'Bad Request', 404: 'Not Found'}
 )
 @swagger_auto_schema(
     method='delete',
-    responses={204: 'No Content'}
+    tags=['Product'],
+    operation_summary="Delete a product",
+    operation_description="Delete a specific product entry",
+    responses={204: 'No Content', 404: 'Not Found'}
 )
 @api_view(['GET','PUT','DELETE'])
 @permission_classes([AllowAny])
@@ -84,17 +97,21 @@ def ProductDetail(requset,pk):
         product.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
     
-
-
-#sales
+# Sales
 @swagger_auto_schema(
     method='get',
+    tags=['Sales'],
+    operation_summary="List all sales",
+    operation_description="Get a list of all sales entries",
     responses={200: SalesSerializer(many=True)},
 )
 @swagger_auto_schema(
     method='post',
+    tags=['Sales'],
+    operation_summary="Create a new sale",
+    operation_description="Create a new sale entry",
     request_body=SalesSerializer,
-    responses={201: SalesSerializer, 404: 'Not Found'}
+    responses={201: SalesSerializer, 400: 'Bad Request'}
 )
 @api_view(['GET', 'POST'])
 @permission_classes([AllowAny])
@@ -113,19 +130,28 @@ def SalesList(request):
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=404)
 
-
+### Sales Detail ###
 @swagger_auto_schema(
     method='get',
-    responses={200: SalesSerializer}
+    tags=['Sales'],
+    operation_summary="Retrieve a sale",
+    operation_description="Get details of a specific sale entry",
+    responses={200: SalesSerializer, 404: 'Not Found'}
 )
 @swagger_auto_schema(
     method='put',
+    tags=['Sales'],
+    operation_summary="Update a sale",
+    operation_description="Update an existing sale entry",
     request_body=SalesSerializer,
-    responses={200: SalesSerializer, 400: 'Bad Request'}
+    responses={200: SalesSerializer, 400: 'Bad Request', 404: 'Not Found'}
 )
 @swagger_auto_schema(
     method='delete',
-    responses={204: 'No Content'}
+    tags=['Sales'],
+    operation_summary="Delete a sale",
+    operation_description="Delete a specific sale entry",
+    responses={204: 'No Content', 404: 'Not Found'}
 )
 @api_view(['GET', 'PUT', 'DELETE'])
 @permission_classes([AllowAny])
@@ -153,19 +179,21 @@ def SalesDetail(request, pk):
         sales.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-
-
-
-
-#order
+# order list
 @swagger_auto_schema(
     method='get',
+    tags=['Order'],
+    operation_summary="List all orders",
+    operation_description="Get a list of all order entries",
     responses={200: OrderSerializer(many=True)},
 )
 @swagger_auto_schema(
     method='post',
+    tags=['Order'],
+    operation_summary="Create a new order",
+    operation_description="Create a new order entry",
     request_body=OrderSerializer,
-    responses={201: OrderSerializer, 404: 'Not Found'}
+    responses={201: OrderSerializer, 400: 'Bad Request'}
 )
 @api_view(['GET', 'POST'])
 @permission_classes([AllowAny])
@@ -184,19 +212,28 @@ def OrderList(request):
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=404)
 
-
+# order detail
 @swagger_auto_schema(
     method='get',
-    responses={200: OrderSerializer}
+    tags=['Order'],
+    operation_summary="Retrieve an order",
+    operation_description="Get details of a specific order entry",
+    responses={200: OrderSerializer, 404: 'Not Found'}
 )
 @swagger_auto_schema(
     method='put',
+    tags=['Order'],
+    operation_summary="Update an order",
+    operation_description="Update an existing order entry",
     request_body=OrderSerializer,
-    responses={200: OrderSerializer, 400: 'Bad Request'}
+    responses={200: OrderSerializer, 400: 'Bad Request', 404: 'Not Found'}
 )
 @swagger_auto_schema(
     method='delete',
-    responses={204: 'No Content'}
+    tags=['Order'],
+    operation_summary="Delete an order",
+    operation_description="Delete a specific order entry",
+    responses={204: 'No Content', 404: 'Not Found'}
 )
 @api_view(['GET', 'PUT', 'DELETE'])
 @permission_classes([AllowAny])

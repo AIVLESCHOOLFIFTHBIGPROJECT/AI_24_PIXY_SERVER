@@ -8,6 +8,9 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import update_last_login
 from django.contrib.auth import get_user_model
@@ -23,8 +26,6 @@ from .serializers import EmailVerificationSerializer, VerifyCodeSerializer, Rese
 from django.core.cache import cache
 import json, os
 
-
-
 # 구글 소셜로그인 변수 설정
 state = os.environ.get("STATE")
 BASE_URL = 'http://127.0.0.1:8000/'
@@ -38,6 +39,14 @@ WHITE_LIST_EXT = [
 ]
 
 # 회원가입
+@swagger_auto_schema(
+    method='post',
+    tags=['User'],
+    operation_summary="User signup",
+    operation_description="Register a new user account",
+    request_body=UserSerializer,
+    responses={201: UserSerializer}
+)
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def signup(request):
@@ -62,6 +71,20 @@ def signup(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # 로그인
+@swagger_auto_schema(
+    method='post',
+    tags=['User'],
+    operation_summary="User login",
+    operation_description="Authenticate user and return tokens",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'email': openapi.Schema(type=openapi.TYPE_STRING),
+            'password': openapi.Schema(type=openapi.TYPE_STRING),
+        }
+    ),
+    responses={200: openapi.Response(description="Login successful")}
+)
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login(request):
@@ -97,6 +120,19 @@ def login(request):
     return response
 
 # 로그아웃
+@swagger_auto_schema(
+    method='post',
+    tags=['User'],
+    operation_summary="User logout",
+    operation_description="Logout user and blacklist refresh token",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'refresh_token': openapi.Schema(type=openapi.TYPE_STRING),
+        }
+    ),
+    responses={200: openapi.Response(description="Logout successful")}
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def logout(request):
@@ -125,6 +161,21 @@ def logout_all(request):
     return Response({'message': '로그아웃 성공!!'}, status=status.HTTP_205_RESET_CONTENT)
 
 # 회원정보 조회, 회원정보 수정(의도하지 않은 토큰도 같이 생긴다. -> 조정필요)
+@swagger_auto_schema(
+    method='get',
+    tags=['User'],
+    operation_summary="Get user profile",
+    operation_description="Retrieve authenticated user's profile information",
+    responses={200: UserInfoSerializer}
+)
+@swagger_auto_schema(
+    method='put',
+    tags=['User'],
+    operation_summary="Update user profile",
+    operation_description="Update authenticated user's profile information",
+    request_body=UserInfoSerializer,
+    responses={201: UserInfoSerializer}
+)
 @api_view(['GET', 'PUT'])
 @permission_classes([IsAuthenticated])
 def profile(request):
@@ -161,6 +212,13 @@ def profile(request):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
 # 회원 탈퇴
+@swagger_auto_schema(
+    method='post',
+    tags=['User'],
+    operation_summary="Delete user account",
+    operation_description="Delete the authenticated user's account",
+    responses={204: openapi.Response(description="Account deleted successfully")}
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def delete_user(request):
@@ -193,6 +251,14 @@ def find_userid(request):
     return Response(data, status=status.HTTP_200_OK)
 
 # 이메일 인증번호 보내기
+@swagger_auto_schema(
+    method='post',
+    tags=['User'],
+    operation_summary="Send email verification code",
+    operation_description="Send a verification code to the user's email",
+    request_body=EmailVerificationSerializer,
+    responses={200: openapi.Response(description="Verification code sent")}
+)
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def send_verification_code(request):
@@ -218,6 +284,14 @@ def send_verification_code(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # 이메일 인증코드 확인
+@swagger_auto_schema(
+    method='post',
+    tags=['User'],
+    operation_summary="Verify email code",
+    operation_description="Verify the email verification code",
+    request_body=VerifyCodeSerializer,
+    responses={200: openapi.Response(description="Code verified")}
+)
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def verify_code(request):
@@ -232,6 +306,14 @@ def verify_code(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # 비밀번호 재설정
+@swagger_auto_schema(
+    method='post',
+    tags=['User'],
+    operation_summary="Reset password",
+    operation_description="Reset user's password using verification code",
+    request_body=ResetPasswordSerializer,
+    responses={200: openapi.Response(description="Password reset successfully")}
+)
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def reset_password(request):
@@ -269,7 +351,6 @@ def google_login(request):
     scope = "https://www.googleapis.com/auth/userinfo.email"
     client_id = os.environ.get("SOCIAL_AUTH_GOOGLE_CLIENT_ID")
     return redirect(f"https://accounts.google.com/o/oauth2/v2/auth?client_id={client_id}&response_type=code&redirect_uri={GOOGLE_CALLBACK_URI}&scope={scope}")
-
 
 def google_callback(request):
     client_id = os.environ.get("SOCIAL_AUTH_GOOGLE_CLIENT_ID")
