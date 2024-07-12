@@ -14,6 +14,7 @@ class StoreUpload(models.Model):
     s_num = models.ForeignKey(Store, on_delete=models.CASCADE)
     m_num = models.ForeignKey(User, on_delete=models.CASCADE)
     f_name = models.CharField(max_length=255)
+    uploaded_file = models.FileField(upload_to='store/',null=True)
 
     def __str__(self):
         return self.f_name

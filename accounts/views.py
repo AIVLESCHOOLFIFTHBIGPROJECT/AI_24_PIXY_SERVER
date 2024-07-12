@@ -25,6 +25,8 @@ from .models import EmailVerificationCode
 from .serializers import EmailVerificationSerializer, VerifyCodeSerializer, ResetPasswordSerializer
 from django.core.cache import cache
 import json, os
+from drf_yasg.utils import swagger_auto_schema
+ 
 
 # 구글 소셜로그인 변수 설정
 state = os.environ.get("STATE")
@@ -250,6 +252,12 @@ def find_userid(request):
     data = {'email' : user.first().email}
     return Response(data, status=status.HTTP_200_OK)
 
+@swagger_auto_schema(
+    method='post',
+    request_body=EmailVerificationSerializer,
+    responses={201: EmailVerificationSerializer, 404: 'Not Found'}
+)
+
 # 이메일 인증번호 보내기
 @swagger_auto_schema(
     method='post',
@@ -283,6 +291,12 @@ def send_verification_code(request):
         return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@swagger_auto_schema(
+    method='post',
+    request_body=VerifyCodeSerializer,
+    responses={201: VerifyCodeSerializer, 404: 'Not Found'}
+)
+
 # 이메일 인증코드 확인
 @swagger_auto_schema(
     method='post',
@@ -304,6 +318,12 @@ def verify_code(request):
             return Response({'message': 'Code verified.'}, status=status.HTTP_200_OK)
         return Response({'error': 'Invalid or expired code.'}, status=status.HTTP_400_BAD_REQUEST)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@swagger_auto_schema(
+    method='post',
+    request_body=ResetPasswordSerializer,
+    responses={201: ResetPasswordSerializer, 404: 'Not Found'}
+)
 
 # 비밀번호 재설정
 @swagger_auto_schema(

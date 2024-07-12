@@ -20,4 +20,5 @@ class StoreUploadSerializer(serializers.ModelSerializer):
             's_num': {'help_text':'매장시퀀스번호'},
             'm_num': {'help_text':'회원시퀀스번호'},
             'f_name': {'help_text':'파일명'},
+            'uploaded_file': {'help_text':'파일업로드'},
         }
