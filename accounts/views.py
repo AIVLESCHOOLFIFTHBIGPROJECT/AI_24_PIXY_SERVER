@@ -285,12 +285,6 @@ def send_verification_code(request):
         return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@swagger_auto_schema(
-    method='post',
-    request_body=VerifyCodeSerializer,
-    responses={201: VerifyCodeSerializer, 404: 'Not Found'}
-)
-
 # 이메일 인증코드 확인
 @swagger_auto_schema(
     method='post',
@@ -312,12 +306,6 @@ def verify_code(request):
             return Response({'message': 'Code verified.'}, status=status.HTTP_200_OK)
         return Response({'error': 'Invalid or expired code.'}, status=status.HTTP_400_BAD_REQUEST)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-@swagger_auto_schema(
-    method='post',
-    request_body=ResetPasswordSerializer,
-    responses={201: ResetPasswordSerializer, 404: 'Not Found'}
-)
 
 # 비밀번호 재설정
 @swagger_auto_schema(
