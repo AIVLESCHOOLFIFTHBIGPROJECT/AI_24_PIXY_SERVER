@@ -252,12 +252,6 @@ def find_userid(request):
     data = {'email' : user.first().email}
     return Response(data, status=status.HTTP_200_OK)
 
-@swagger_auto_schema(
-    method='post',
-    request_body=EmailVerificationSerializer,
-    responses={201: EmailVerificationSerializer, 404: 'Not Found'}
-)
-
 # 이메일 인증번호 보내기
 @swagger_auto_schema(
     method='post',
