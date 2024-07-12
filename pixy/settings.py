@@ -88,10 +88,10 @@ CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
         "LOCATION": "redis://Aibigproject24@127.0.0.1:6379",
+        'OPTIONS': {
+            'PASSWORD': 'Aibigproject24',
+        }
     },
-    'OPTIONS': {
-            'PASSWORD': 'Aibigproject24',  # 비밀번호 명시
-    }
 }
 
 # Database
