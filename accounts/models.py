@@ -76,3 +76,13 @@ class User(AbstractBaseUser):
     
     class Meta:
         db_table = 'user' # 테이블명을 user로 설정
+
+import uuid
+
+class EmailVerificationCode(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    code = models.UUIDField(default=uuid.uuid4, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f'{self.user.username} - {self.code}'

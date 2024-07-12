@@ -14,3 +14,15 @@ class UserInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = get_user_model()
         fields = ('name', 'p_num','r_num', 'business_r')
+
+class EmailVerificationSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+class VerifyCodeSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    code = serializers.UUIDField()
+
+class ResetPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    code = serializers.UUIDField()
+    new_password = serializers.CharField(write_only=True)

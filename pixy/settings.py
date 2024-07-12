@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     
     'accounts',
+    'notice',
     'post',
     'product',
     'store',
@@ -82,6 +83,13 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "pixy.wsgi.application"
 
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379",
+    }
+}
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
@@ -144,6 +152,8 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',  # JWT를 통한 인증방식 사용
     ),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 3,
 }
 
 REST_USE_JWT = True
@@ -174,6 +184,7 @@ DEFAULT_FROM_EMAIL=EMAIL_HOST_USER
 # 소셜 로그인
 # 사이트는 1개만 사용할 것이라고 명시
 SITE_ID = 1
+
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None # username 필드 사용 x
 ACCOUNT_EMAIL_REQUIRED = True            # email 필드 사용 o
 ACCOUNT_USERNAME_REQUIRED = False        # username 필드 사용 x
@@ -181,3 +192,4 @@ ACCOUNT_AUTHENTICATION_METHOD = 'email'
 SOCIAL_AUTH_GOOGLE_CLIENT_ID = env('SOCIAL_AUTH_GOOGLE_CLIENT_ID')
 SOCIAL_AUTH_GOOGLE_SECRET = env('SOCIAL_AUTH_GOOGLE_SECRET')
 STATE = env('STATE')
+
