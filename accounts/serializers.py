@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
-
+    # business_r = serializers.ImageField()
     class Meta:
         model = get_user_model()
         fields = ('id', 'email', 'password', 'name', 'p_num', 'r_num', 'business_r','is_agreement1', 'is_agreement2', 'is_agreement3')

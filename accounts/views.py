@@ -1,9 +1,10 @@
 from django.shortcuts import render
 
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.parsers import MultiPartParser, JSONParser, FormParser
 
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
@@ -23,9 +24,8 @@ from .serializers import EmailVerificationSerializer, VerifyCodeSerializer, Rese
 from django.core.cache import cache
 import json, os
 from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
  
-
-
 
 # 구글 소셜로그인 변수 설정
 state = os.environ.get("STATE")
@@ -39,22 +39,53 @@ WHITE_LIST_EXT = [
     '.png'
 ]
 
+### 회원가입 ###
+@swagger_auto_schema(
+    method='post',
+    tags=['User'],
+    operation_summary="회원가입",
+    operation_description="회원가입 (누구나 가입 가능)",
+    manual_parameters=[
+        openapi.Parameter('business_r', openapi.IN_FORM, type=openapi.TYPE_FILE, description="User image", required=True),
+        openapi.Parameter('email', openapi.IN_FORM, type=openapi.TYPE_STRING, description="User email", required=True),
+        openapi.Parameter('name', openapi.IN_FORM, type=openapi.TYPE_STRING, description="User name", required=True),
+        openapi.Parameter('p_num', openapi.IN_FORM, type=openapi.TYPE_STRING, description="Phone number", required=True),
+        openapi.Parameter('r_num', openapi.IN_FORM, type=openapi.TYPE_STRING, description="Registration number", required=True),
+        openapi.Parameter('password', openapi.IN_FORM, type=openapi.TYPE_STRING, description="Password", required=True),
+        openapi.Parameter('is_agreement1', openapi.IN_FORM, type=openapi.TYPE_BOOLEAN, description="Agreement 1", required=True),
+        openapi.Parameter('is_agreement2', openapi.IN_FORM, type=openapi.TYPE_BOOLEAN, description="Agreement 2", required=True),
+        openapi.Parameter('is_agreement3', openapi.IN_FORM, type=openapi.TYPE_BOOLEAN, description="Agreement 3", required=True),
+    ],
+    consumes=['multipart/form-data'],
+    responses={
+        201: openapi.Response(
+            description="User created successfully",
+            examples={
+                "application/json": {
+                    "message": "User created successfully"
+                }
+            }
+        ),
+        400: 'Bad Request'
+    }
+)
+
 # 회원가입
 @api_view(['POST'])
+@parser_classes([MultiPartParser, FormParser])
 @permission_classes([AllowAny])
 def signup(request):
-    # 'json' 키에서 데이터 가져오기
-    json_data = request.data.get('json')
-    data = json.loads(json_data)
-    # print(data)
+    data = request.data.copy()
+
     # 이미지 파일 가져오기
     uploaded_file = request.FILES.get('business_r')
     if uploaded_file:
         # 파일 확장자 확인
         file_extension = os.path.splitext(uploaded_file.name)[1].lower()
         if file_extension not in WHITE_LIST_EXT:
-            return Response({"detail": "Only .jpg and .jpeg and .png files are allowed."}, status=status.HTTP_400_BAD_REQUEST)
-    data['business_r'] = uploaded_file
+            return Response({"detail": "Only .jpg, .jpeg, and .png files are allowed."}, status=status.HTTP_400_BAD_REQUEST)
+        data['business_r'] = uploaded_file
+
     serializer = UserSerializer(data=data)
     if serializer.is_valid(raise_exception=True):
         user = serializer.save()
@@ -62,6 +93,42 @@ def signup(request):
         user.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+### 로그인###
+@swagger_auto_schema(
+    method='post',
+    tags=['User'],
+    operation_summary="로그인",
+    operation_description="로그인(누구나 가능)",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'email': openapi.Schema(type=openapi.TYPE_STRING, description='User email'),
+            'password': openapi.Schema(type=openapi.TYPE_STRING, description='User password'),
+        },
+        required=['email', 'password'] 
+    ),
+    responses={
+        200: openapi.Response(
+        description="Successful login",
+            examples={
+                "application/json": {
+                    "message": "로그인 성공!!",
+                    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzIwNzY4NjE1LCJpYXQiOjE3MjA3NjUwMTUsImp0aSI6IjgxNjkyMWQ0NGRlNjRmNjFhNzZmYzBjYjBjYThlOTRjIiwidXNlcl9pZCI6MTd9.VPEvTccSxvSc0knBo6ylc5Zfj9IyFLusVuvflHwDwL4",
+                    "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTcyMTM2OTgxNSwiaWF0IjoxNzIwNzY1MDE1LCJqdGkiOiIwN2ZlZWQ0MjMyYzQ0MWVhODUxMGFhZGQyODU1MjA3OCIsInVzZXJfaWQiOjE3fQ.3-qI0TgHNiWda-rW4VCdoiGPwaAzKcvzlWdQTqD7o3k"
+                }
+            }
+        ),
+        401: openapi.Response(
+            description="Unauthorized",
+            examples={
+                "application/json": {
+                    "message": "아이디 또는 비밀번호가 일치하지 않습니다."
+                }
+            }
+        )
+    }
+)
 
 # 로그인
 @api_view(['POST'])
@@ -98,6 +165,39 @@ def login(request):
     update_last_login(None, user)
     return response
 
+### 로그아웃 ###
+@swagger_auto_schema(
+    method='post',
+    tags=['User'],
+    operation_summary="로그아웃",
+    operation_description="로그아웃(로그인한 사람만 가능)",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'refresh_token': openapi.Schema(type=openapi.TYPE_STRING, description='Refresh token to be blacklisted'),
+        },
+        required=['refresh_token']
+    ),
+    responses={
+        200: openapi.Response(
+        description="Successful logout",
+            examples={
+                "application/json": {
+                    "message": "로그아웃 성공!!"
+                }
+            }
+        ),
+        400: openapi.Response(
+        description="Logout failed",
+            examples={
+                "application/json": {
+                    "message": "로그아웃 실패!!"
+                }
+            }
+        )
+    }
+)
+
 # 로그아웃
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -117,17 +217,56 @@ def logout(request):
         return Response({'message': '로그아웃 실패!!'}, status=status.HTTP_400_BAD_REQUEST)
     
 # 로그아웃(보류)
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def logout_all(request):
-    tokens = OutstandingToken.objects.filter(user_id=request.data.get('email'))
-    for token in tokens:
-        t, _ = BlacklistedToken.objects.get_or_create(token=token)
+# @api_view(['POST'])
+# @permission_classes([IsAuthenticated])
+# def logout_all(request):
+#     tokens = OutstandingToken.objects.filter(user_id=request.data.get('email'))
+#     for token in tokens:
+#         t, _ = BlacklistedToken.objects.get_or_create(token=token)
 
-    return Response({'message': '로그아웃 성공!!'}, status=status.HTTP_205_RESET_CONTENT)
+#     return Response({'message': '로그아웃 성공!!'}, status=status.HTTP_205_RESET_CONTENT)
+
+### 회원정보 조회 ###
+@swagger_auto_schema(
+    method='get',
+    tags=['User'],
+    operation_summary="회원정보 조회",
+    operation_description="조회(로그인한 사람만 가능)",
+    responses={
+        200: UserInfoSerializer,  # 200 응답에 대해 UserInfoSerializer 사용
+        404: 'Not Found'
+    }
+)
+
+### 회원정보 수정 ###
+@swagger_auto_schema(
+    method='put',
+    tags=['User'],
+    operation_summary="회원정보 수정",
+    operation_description="회원정보 수정(로그인한 사람만 가능)",
+    manual_parameters=[
+        openapi.Parameter('business_r', openapi.IN_FORM, type=openapi.TYPE_FILE, description="User image", required=True),
+        openapi.Parameter('name', openapi.IN_FORM, type=openapi.TYPE_STRING, description="User name", required=True),
+        openapi.Parameter('p_num', openapi.IN_FORM, type=openapi.TYPE_STRING, description="Phone number", required=True),
+        openapi.Parameter('r_num', openapi.IN_FORM, type=openapi.TYPE_STRING, description="Registration number", required=True),
+    ],
+    consumes=['multipart/form-data'],
+    responses={
+        201: openapi.Response(
+            description="User modified successfully",
+            examples={
+                "application/json": {
+                    "message": "User modified successfully"
+                }
+            }
+        ),
+        400: 'Bad Request'
+    }
+)
 
 # 회원정보 조회, 회원정보 수정(의도하지 않은 토큰도 같이 생긴다. -> 조정필요)
 @api_view(['GET', 'PUT'])
+@parser_classes([MultiPartParser, FormParser])
 @permission_classes([IsAuthenticated])
 def profile(request):
     # 회원정보 조회
@@ -135,9 +274,7 @@ def profile(request):
         return Response(UserInfoSerializer(request.user).data, status=status.HTTP_200_OK)
     # 회원정보 수정
     elif request.method == 'PUT':
-        # 'json' 키에서 데이터 가져오기
-        json_data = request.data.get('json')
-        data = json.loads(json_data)
+        data = request.data.copy()
         # 기존에 있던 이미지 조회
         old_image_path = request.user.business_r
         BASE_DIR = Path(__file__).resolve().parent.parent
@@ -161,15 +298,39 @@ def profile(request):
                             status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
+
+### 회원 탈퇴 ###
+@swagger_auto_schema(
+    method='post',
+    tags=['User'],
+    operation_summary="회원탈퇴",
+    operation_description="탈퇴(로그인한 사람만 가능)",
+    responses={
+        204: openapi.Response(
+            description="Account has been deleted successfully",
+            examples={
+                "application/json": {
+                    "message": "Account has been deleted successfully"
+                }
+            }
+        ),
+        400: openapi.Response(
+        description="Bad request",
+            examples={
+                "application/json": {
+                    "error": "Description of the error"
+                }
+            }
+        )
+    }
+)
+
 # 회원 탈퇴
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def delete_user(request):
     user = request.user
     try:
-        # 사용자 탈퇴 로직 (예: 사용자 데이터 삭제)
-        user.delete()
         # JWT 토큰 무효화
         tokens = OutstandingToken.objects.filter(user=user)
         for token in tokens:
@@ -177,30 +338,38 @@ def delete_user(request):
             if not BlacklistedToken.objects.filter(token=token).exists():
                 # 토큰을 블랙리스트에 추가
                 BlacklistedToken.objects.create(token=token)
+                
+        # 사용자 탈퇴 로직 (예: 사용자 데이터 삭제)
+        user.delete()
+        
         return Response({'message': 'Account has been deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
     
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
 # 아이디(이메일) 찾기(보류)
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def find_userid(request):
-    target_email = request.data.get('email')
-    User = get_user_model()
-    user = User.objects.filter(email=target_email)
-    if not user.exists():
-        return Response({'message': '해당 아이디는 존재하지 않습니다.'}, status=status.HTTP_400_BAD_REQUEST)
-    data = {'email' : user.first().email}
-    return Response(data, status=status.HTTP_200_OK)
+# @api_view(['POST'])
+# @permission_classes([AllowAny])
+# def find_userid(request):
+#     target_email = request.data.get('email')
+#     User = get_user_model()
+#     user = User.objects.filter(email=target_email)
+#     if not user.exists():
+#         return Response({'message': '해당 아이디는 존재하지 않습니다.'}, status=status.HTTP_400_BAD_REQUEST)
+#     data = {'email' : user.first().email}
+#     return Response(data, status=status.HTTP_200_OK)
 
+### 이메일 인증코드 보내기 ###
 @swagger_auto_schema(
     method='post',
+    tags=['User'],
+    operation_summary="이메일 인증",
+    operation_description="이메일 인증 보내기 (누구나 가능)",
     request_body=EmailVerificationSerializer,
     responses={201: EmailVerificationSerializer, 404: 'Not Found'}
 )
 
-# 이메일 인증번호 보내기
+# 이메일 인증코드 보내기
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def send_verification_code(request):
@@ -209,15 +378,14 @@ def send_verification_code(request):
         email = serializer.validated_data['email']
         user = User.objects.filter(email=email).first()
         if user:
-            # code = EmailVerificationCode.objects.create(user=user)
             code = str(uuid.uuid4())
             # 5분 동안 유효
             cache.set(f'verification_code_{email}', code, timeout=300)
-            message = 'Your verification code is {code}'.format(code=code)
+            message = '인증 코드는 {code}'.format(code=code)
             send_mail(
                 'Your verification code',
                 message,
-                'foodb244@gmail.com',
+                email,
                 [email],
                 fail_silently=False,
             )
@@ -225,8 +393,12 @@ def send_verification_code(request):
         return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+### 이메일 인증코드 확인 ###
 @swagger_auto_schema(
     method='post',
+    tags=['User'],
+    operation_summary="인증코드 확인",
+    operation_description="이메일 인증코드 확인 (누구나 가능)",
     request_body=VerifyCodeSerializer,
     responses={201: VerifyCodeSerializer, 404: 'Not Found'}
 )
@@ -245,8 +417,12 @@ def verify_code(request):
         return Response({'error': 'Invalid or expired code.'}, status=status.HTTP_400_BAD_REQUEST)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+### 비밀번호 재설정 ###
 @swagger_auto_schema(
     method='post',
+    tags=['User'],
+    operation_summary="비밀번호 재설정",
+    operation_description="비밀번호 재설정하기 (누구나 가능)",
     request_body=ResetPasswordSerializer,
     responses={201: ResetPasswordSerializer, 404: 'Not Found'}
 )
@@ -386,7 +562,7 @@ class GoogleLogin(SocialLoginView):
     adapter_class = google_view.GoogleOAuth2Adapter
     callback_url = GOOGLE_CALLBACK_URI
     client_class = OAuth2Client
-
+    
 # 소셜 로그인(네이버)
 from dj_rest_auth.registration.views import SocialLoginView
 from allauth.socialaccount.providers.naver import views as naver_view
@@ -493,3 +669,4 @@ class NaverLogin(SocialLoginView):
     adapter_class = naver_view.NaverOAuth2Adapter
     callback_url = NAVER_CALLBACK_URI
     client_class = OAuth2Client
+    
