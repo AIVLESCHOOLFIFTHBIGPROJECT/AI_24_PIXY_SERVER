@@ -7,10 +7,10 @@ urlpatterns = [
     path('signup/', views.signup, name='signup'),
     path('login/normal/', views.login, name='login'),
     path('logout/normal/', views.logout, name='logout'),
-    path('logout_all/normal/', views.logout_all, name='logout_all'),
+    # path('logout_all/normal/', views.logout_all, name='logout_all'),
     path('profile/normal/', views.profile, name='profile'),
     path('delete_user/normal/', views.delete_user, name='delete_user'),
-    path('find_userid/normal/', views.find_userid, name='find_userid'),
+    # path('find_userid/normal/', views.find_userid, name='find_userid'),
     # 토큰 재발급
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     # 구글 소셜 로그인
