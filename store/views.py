@@ -10,18 +10,23 @@ from rest_framework.response import Response
 from django.http import Http404
 from rest_framework.parsers import MultiPartParser,FormParser
 from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
-
-
-#store
+# Store
 @swagger_auto_schema(
     method='get',
+    tags=['Store'],
+    operation_summary="List all stores",
+    operation_description="Get a list of all store entries",
     responses={200: StoreSerializer(many=True)},
 )
 @swagger_auto_schema(
     method='post',
+    tags=['Store'],
+    operation_summary="Create a new store",
+    operation_description="Create a new store entry",
     request_body=StoreSerializer,
-    responses={201: StoreSerializer, 404: 'Not Found'}
+    responses={201: StoreSerializer, 400: 'Bad Request'}
 )
 @api_view(['GET','POST'])
 @permission_classes([AllowAny])
@@ -42,20 +47,28 @@ def StoreList(requset):
             return Response(serializer.data,status=201)
         return Response(serializer.errors,status=404)
 
-
-
+# store detail
 @swagger_auto_schema(
     method='get',
-    responses={200: StoreSerializer}
+    tags=['Store'],
+    operation_summary="Retrieve a store",
+    operation_description="Get details of a specific store entry",
+    responses={200: StoreSerializer, 404: 'Not Found'}
 )
 @swagger_auto_schema(
     method='put',
+    tags=['Store'],
+    operation_summary="Update a store",
+    operation_description="Update an existing store entry",
     request_body=StoreSerializer,
-    responses={200: StoreSerializer, 400: 'Bad Request'}
+    responses={200: StoreSerializer, 400: 'Bad Request', 404: 'Not Found'}
 )
 @swagger_auto_schema(
     method='delete',
-    responses={204: 'No Content'}
+    tags=['Store'],
+    operation_summary="Delete a store",
+    operation_description="Delete a specific store entry",
+    responses={204: 'No Content', 404: 'Not Found'}
 )
 @api_view(['GET','PUT','DELETE'])
 @permission_classes([AllowAny])
@@ -84,17 +97,21 @@ def StoreDetail(requset,pk):
         store.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-
-
 #StoreUpload
 @swagger_auto_schema(
     method='get',
+    tags=['StoreUpload'],
+    operation_summary="List all store uploads",
+    operation_description="Get a list of all store upload entries",
     responses={200: StoreUploadSerializer(many=True)},
 )
 @swagger_auto_schema(
     method='post',
+    tags=['StoreUpload'],
+    operation_summary="Create a new store upload",
+    operation_description="Create a new store upload entry",
     request_body=StoreUploadSerializer,
-    responses={201: StoreUploadSerializer, 404: 'Not Found'}
+    responses={201: StoreUploadSerializer, 400: 'Bad Request'}
 )
 @api_view(['GET', 'POST'])
 @permission_classes([AllowAny])
@@ -111,19 +128,28 @@ def StoreUploadList(request):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
+# store upload detail
 @swagger_auto_schema(
     method='get',
-    responses={200: StoreUploadSerializer}
+    tags=['StoreUpload'],
+    operation_summary="Retrieve a store upload",
+    operation_description="Get details of a specific store upload entry",
+    responses={200: StoreUploadSerializer, 404: 'Not Found'}
 )
 @swagger_auto_schema(
     method='put',
+    tags=['StoreUpload'],
+    operation_summary="Update a store upload",
+    operation_description="Update an existing store upload entry",
     request_body=StoreUploadSerializer,
-    responses={200: StoreUploadSerializer, 400: 'Bad Request'}
+    responses={200: StoreUploadSerializer, 400: 'Bad Request', 404: 'Not Found'}
 )
 @swagger_auto_schema(
     method='delete',
-    responses={204: 'No Content'}
+    tags=['StoreUpload'],
+    operation_summary="Delete a store upload",
+    operation_description="Delete a specific store upload entry",
+    responses={204: 'No Content', 404: 'Not Found'}
 )
 @api_view(['GET', 'PUT', 'DELETE'])
 @permission_classes([AllowAny])

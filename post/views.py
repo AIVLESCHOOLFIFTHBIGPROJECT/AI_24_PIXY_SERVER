@@ -145,14 +145,21 @@ from django.http import Http404
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
+### Qna List ###
 @swagger_auto_schema(
     method='get',
+    tags=['QnA'],
+    operation_summary="List all QnAs",
+    operation_description="Get a list of all QnA entries",
     responses={200: QnaSerializer(many=True)},
 )
 @swagger_auto_schema(
     method='post',
+    tags=['QnA'],
+    operation_summary="Create a new QnA",
+    operation_description="Create a new QnA entry",
     request_body=QnaSerializer,
-    responses={201: QnaSerializer, 404: 'Not Found'}
+    responses={201: QnaSerializer, 400: 'Bad Request'}
 )
 @api_view(['GET', 'POST'])
 @permission_classes([AllowAny])
@@ -172,19 +179,28 @@ def QnaList(request):
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=404)
 
-
+### Qna Detail ###
 @swagger_auto_schema(
     method='get',
-    responses={200: QnaSerializer}
+    tags=['QnA'],
+    operation_summary="Retrieve a QnA",
+    operation_description="Get details of a specific QnA entry",
+    responses={200: QnaSerializer, 404: 'Not Found'}
 )
 @swagger_auto_schema(
     method='put',
+    tags=['QnA'],
+    operation_summary="Update a QnA",
+    operation_description="Update an existing QnA entry",
     request_body=QnaSerializer,
-    responses={200: QnaSerializer, 400: 'Bad Request'}
+    responses={200: QnaSerializer, 400: 'Bad Request', 404: 'Not Found'}
 )
 @swagger_auto_schema(
     method='delete',
-    responses={204: 'No Content'}
+    tags=['QnA'],
+    operation_summary="Delete a QnA",
+    operation_description="Delete a specific QnA entry",
+    responses={204: 'No Content', 404: 'Not Found'}
 )
 @api_view(['GET', 'PUT', 'DELETE'])
 @permission_classes([AllowAny])
@@ -213,15 +229,21 @@ def QnaDetail(request, pk):
         qna.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-
+### Answer List ###
 @swagger_auto_schema(
     method='get',
+    tags=['Answer'],
+    operation_summary="List all Answers",
+    operation_description="Get a list of all Answer entries",
     responses={200: AnswerSerializer(many=True)},
 )
 @swagger_auto_schema(
     method='post',
+    tags=['Answer'],
+    operation_summary="Create a new Answer",
+    operation_description="Create a new Answer entry",
     request_body=AnswerSerializer,
-    responses={201: AnswerSerializer, 404: 'Not Found'}
+    responses={201: AnswerSerializer, 400: 'Bad Request'}
 )
 @api_view(['GET', 'POST'])
 @permission_classes([AllowAny])
@@ -241,19 +263,28 @@ def AnswerList(request):
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=404)
 
-
+### Answer Detail ###
 @swagger_auto_schema(
     method='get',
-    responses={200: AnswerSerializer}
+    tags=['Answer'],
+    operation_summary="Retrieve an Answer",
+    operation_description="Get details of a specific Answer entry",
+    responses={200: AnswerSerializer, 404: 'Not Found'}
 )
 @swagger_auto_schema(
     method='put',
+    tags=['Answer'],
+    operation_summary="Update an Answer",
+    operation_description="Update an existing Answer entry",
     request_body=AnswerSerializer,
-    responses={200: AnswerSerializer, 400: 'Bad Request'}
+    responses={200: AnswerSerializer, 400: 'Bad Request', 404: 'Not Found'}
 )
 @swagger_auto_schema(
     method='delete',
-    responses={204: 'No Content'}
+    tags=['Answer'],
+    operation_summary="Delete an Answer",
+    operation_description="Delete a specific Answer entry",
+    responses={204: 'No Content', 404: 'Not Found'}
 )
 @api_view(['GET', 'PUT', 'DELETE'])
 @permission_classes([AllowAny])
