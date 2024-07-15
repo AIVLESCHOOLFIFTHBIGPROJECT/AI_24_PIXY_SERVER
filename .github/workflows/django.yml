@@ -52,5 +52,8 @@ jobs:
         STATE: ${{ secrets.STATE }}
         SOCIAL_AUTH_NAVER_CLIENT_ID: ${{ secrets.SOCIAL_AUTH_NAVER_CLIENT_ID }}
         SOCIAL_AUTH_NAVER_SECRET: ${{ secrets.SOCIAL_AUTH_NAVER_SECRET }}
+        REDIS_USERNAME: ${{ secrets.STATE }}
+        REDIS_PASSWORD: ${{ secrets.STATE }}
+        REDIS_PORT: ${{ secrets.STATE }}
       run: |
         python manage.py test

@@ -83,15 +83,32 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "pixy.wsgi.application"
 
+REDIS_USERNAME = env('REDIS_USERNAME')
+REDIS_PASSWORD = env('REDIS_PASSWORD')
+REDIS_PORT = env('REDIS_PORT')
 
+# Redis
 CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": "redis://Aibigproject24@127.0.0.1:6379",
-        'OPTIONS': {
-            'PASSWORD': 'Aibigproject24',
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': f"redis://{REDIS_USERNAME}:{REDIS_PASSWORD}@{PUBLIC_IPv4}:{REDIS_PORT}",
+    }
+}
+
+# Swagger Authorize
+SWAGGER_SETTINGS = {
+    'USE_SESSION_AUTH': False,
+    'SECURITY_DEFINITIONS': {
+        'BearerAuth': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header',
+            'description': "JWT Token"
         }
     },
+    'SECURITY_REQUIREMENTS': [{
+        'BearerAuth': []
+    }]
 }
 
 # Database
@@ -195,4 +212,3 @@ ACCOUNT_AUTHENTICATION_METHOD = 'email'
 SOCIAL_AUTH_GOOGLE_CLIENT_ID = env('SOCIAL_AUTH_GOOGLE_CLIENT_ID')
 SOCIAL_AUTH_GOOGLE_SECRET = env('SOCIAL_AUTH_GOOGLE_SECRET')
 STATE = env('STATE')
-
