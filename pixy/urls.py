@@ -30,7 +30,7 @@ def api_root(request):
     })
 
 urlpatterns = [
-    path('api/', api_root),
+    path('', api_root),
     path('admin/', admin.site.urls),
     path('api/user/', include('accounts.urls')),
     path('api/notice/', include('notice.urls')),
@@ -40,9 +40,9 @@ urlpatterns = [
     path('api/notifications/', include('notifications.urls')),
     
     # Swagger UI
-    re_path(r'^api/swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
-    path('api/swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
+    re_path(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
+    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     
     # ReDoc
-    path('api/redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
+    path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 ]
