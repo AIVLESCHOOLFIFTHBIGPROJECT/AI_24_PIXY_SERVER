@@ -14,7 +14,8 @@ class StoreSerializer(serializers.ModelSerializer):
 class StoreUploadSerializer(serializers.ModelSerializer):
     class Meta:
         model = StoreUpload
-        fields = '__all__'
+        fields = ['u_num', 'f_name', 'uploaded_file', 's_num', 'm_num']
+        read_only_fields = ['s_num', 'm_num']
         extra_kwargs = {
             'u_num': {'help_text':'업로드시퀀스번호'},
             's_num': {'help_text':'매장시퀀스번호'},
