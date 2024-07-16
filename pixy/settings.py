@@ -15,10 +15,11 @@ pymysql.install_as_MySQLdb()
 SECRET_KEY = env('SECRET_KEY')
 DEBUG = env.bool('DEBUG', default=False)
 DOMAIN = env('DOMAIN')
+API_DOMAIN = env('API_DOMAIN')
 PUBLIC_IPv4 = env('PUBLIC_IPv4')
 LOCAL_HOST = env('LOCAL_HOST')
 
-ALLOWED_HOSTS = [DOMAIN, PUBLIC_IPv4, LOCAL_HOST]
+ALLOWED_HOSTS = [DOMAIN, API_DOMAIN, PUBLIC_IPv4, LOCAL_HOST]
 
 
 # Application definition
@@ -50,6 +51,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.google',
     'allauth.socialaccount.providers.naver',
     'notifications',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -61,6 +63,13 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     'allauth.account.middleware.AccountMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
+]
+
+CORS_ALLOWED_ORIGINS = [
+    "https://pixy.kro.kr",
+    "http://localhost:3000",  # 개발 환경용
 ]
 
 ROOT_URLCONF = "pixy.urls"
