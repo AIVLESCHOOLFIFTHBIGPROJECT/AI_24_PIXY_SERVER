@@ -20,7 +20,7 @@ class Product(models.Model):
 
 class Sales(models.Model):
     s_num = models.BigAutoField(primary_key=True)
-    p_num = models.ForeignKey(Product, on_delete=models.CASCADE,related_name='sales_records')
+    # p_num = models.ForeignKey(Product, on_delete=models.CASCADE,related_name='sales_records')
     s_num2 = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='store_sales')
     date=models.CharField(max_length=255,null=True)
     category=models.CharField(max_length=255,null=True)
