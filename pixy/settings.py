@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'drf_yasg',
     'dj_rest_auth',
     'dj_rest_auth.registration',
+    'storages',
 
     'allauth',
     'allauth.account',
@@ -71,6 +72,8 @@ CORS_ALLOWED_ORIGINS = [
     "https://pixy.kro.kr",
     "http://localhost:8000",  # 개발 환경용
 ]
+
+CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = "pixy.urls"
 

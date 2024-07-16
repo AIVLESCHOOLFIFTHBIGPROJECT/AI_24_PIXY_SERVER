@@ -17,6 +17,7 @@ from django.contrib.auth.models import update_last_login
 from django.contrib.auth import get_user_model
 
 from accounts.serializers import UserSerializer, UserInfoSerializer
+from store.serializers import StoreSerializer
 from pathlib import Path
 from django.http import HttpResponse
 from django.contrib.auth.models import User
@@ -26,6 +27,7 @@ from .models import EmailVerificationCode
 from .serializers import EmailVerificationSerializer, VerifyCodeSerializer, ResetPasswordSerializer
 from django.core.cache import cache
 import json, os
+from store.models import Store
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
@@ -33,6 +35,7 @@ from drf_yasg import openapi
 
 # 구글 소셜로그인 변수 설정
 state = os.environ.get("STATE")
+# 해당 BASE_URL은 로컬 이후에 서버에 맞게 바꿔줘야함
 BASE_URL = 'http://127.0.0.1:8000/'
 GOOGLE_CALLBACK_URI = BASE_URL + 'api/user/google/callback/'
 
@@ -59,6 +62,7 @@ WHITE_LIST_EXT = [
         openapi.Parameter('is_agreement1', openapi.IN_FORM, type=openapi.TYPE_BOOLEAN, description="Agreement 1", required=True),
         openapi.Parameter('is_agreement2', openapi.IN_FORM, type=openapi.TYPE_BOOLEAN, description="Agreement 2", required=True),
         openapi.Parameter('is_agreement3', openapi.IN_FORM, type=openapi.TYPE_BOOLEAN, description="Agreement 3", required=True),
+        openapi.Parameter('store_name', openapi.IN_FORM, type=openapi.TYPE_STRING, description="store_name", required=True),
     ],
     consumes=['multipart/form-data'],
     responses={
@@ -80,7 +84,8 @@ WHITE_LIST_EXT = [
 @permission_classes([AllowAny])
 def signup(request):
     data = request.data.copy()
-
+    # store_name = request.data.get('store_name')
+    code = request.data.get('code')
     # 이미지 파일 가져오기
     uploaded_file = request.FILES.get('business_r')
     if uploaded_file:
@@ -95,6 +100,16 @@ def signup(request):
         user = serializer.save()
         user.set_password(data['password'])
         user.save()
+        # 회원의 기본키 가져오기
+        user_id = user.pk
+        # StoreSerializer 유효성 검사 및 저장
+        store_data = {
+            'name': request.data.get('store_name'),
+            'm_num': user_id
+        }
+        store_serializer = StoreSerializer(data=store_data)
+        if store_serializer.is_valid(raise_exception=True):
+            store_serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -119,7 +134,9 @@ def signup(request):
                 "application/json": {
                     "message": "로그인 성공!!",
                     "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzIwNzY4NjE1LCJpYXQiOjE3MjA3NjUwMTUsImp0aSI6IjgxNjkyMWQ0NGRlNjRmNjFhNzZmYzBjYjBjYThlOTRjIiwidXNlcl9pZCI6MTd9.VPEvTccSxvSc0knBo6ylc5Zfj9IyFLusVuvflHwDwL4",
-                    "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTcyMTM2OTgxNSwiaWF0IjoxNzIwNzY1MDE1LCJqdGkiOiIwN2ZlZWQ0MjMyYzQ0MWVhODUxMGFhZGQyODU1MjA3OCIsInVzZXJfaWQiOjE3fQ.3-qI0TgHNiWda-rW4VCdoiGPwaAzKcvzlWdQTqD7o3k"
+                    "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTcyMTM2OTgxNSwiaWF0IjoxNzIwNzY1MDE1LCJqdGkiOiIwN2ZlZWQ0MjMyYzQ0MWVhODUxMGFhZGQyODU1MjA3OCIsInVzZXJfaWQiOjE3fQ.3-qI0TgHNiWda-rW4VCdoiGPwaAzKcvzlWdQTqD7o3k",
+                    'user_id': 'user.pk',
+                    'name': 'user.name'
                 }
             }
         ),
@@ -149,7 +166,9 @@ def login(request):
     response = Response({
         'message': '로그인 성공!!',
         'access_token': str(refresh.access_token),
-        'refresh_token': str(refresh)
+        'refresh_token': str(refresh),
+        'user_id': user.pk,  # 로그인한 회원의 pk
+        'name': user.name
     })
     # 쿠키 저장(refresh token, access token)
     response.set_cookie(
@@ -345,23 +364,75 @@ def delete_user(request):
                 
         # 사용자 탈퇴 로직 (예: 사용자 데이터 삭제)
         user.delete()
+        # 탈퇴시 클라이언트 쿠키 삭제
+        response = HttpResponse("성공적으로 탈퇴되었습니다!!")
+        response.delete_cookie('access_token')
+        response.delete_cookie('refresh_token')
         
-        return Response({'message': 'Account has been deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+        return response
     
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    
-# 아이디(이메일) 찾기(보류)
-# @api_view(['POST'])
-# @permission_classes([AllowAny])
-# def find_userid(request):
-#     target_email = request.data.get('email')
-#     User = get_user_model()
-#     user = User.objects.filter(email=target_email)
-#     if not user.exists():
-#         return Response({'message': '해당 아이디는 존재하지 않습니다.'}, status=status.HTTP_400_BAD_REQUEST)
-#     data = {'email' : user.first().email}
-#     return Response(data, status=status.HTTP_200_OK)
+
+@swagger_auto_schema(
+    method='post',
+    operation_summary="이메일 중복확인",
+    operation_description="이메일 중복확인(누구나 가능)",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'email': openapi.Schema(type=openapi.TYPE_STRING, description='Email to check for duplication'),
+        },
+        required=['email']
+    ),
+    responses={
+        200: openapi.Response(description='Success', examples={'application/json': {'message': '해당 아이디는 사용가능 합니다.'}}),
+        400: openapi.Response(description='Email available', examples={'application/json': {'message': '해당 아이디는 사용가능합니다.'}})
+    },
+    tags=['User']
+)
+
+# 아이디(이메일) 중복검사
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def duplicate_userid(request):
+    target_email = request.data.get('email')
+    User = get_user_model()
+    user = User.objects.filter(email=target_email) 
+    if not user.exists():
+        return Response({'message': '해당 아이디는 사용 가능합니다.'}, status=status.HTTP_200_OK)
+    data = {'message' : '이미 있는 아이디입니다.'}
+    return Response(data, status=status.HTTP_400_BAD_REQUEST)
+
+@swagger_auto_schema(
+    method='post',
+    operation_summary="휴대폰 중복확인",
+    operation_description="휴대폰 중복확인(누구나 가능)",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'p_num': openapi.Schema(type=openapi.TYPE_STRING, description='phone to check for duplication'),
+        },
+        required=['p_num']
+    ),
+    responses={
+        200: openapi.Response(description='Success', examples={'application/json': {'message': '해당 휴대폰번호는 사용 가능합니다.'}}),
+        400: openapi.Response(description='Email available', examples={'application/json': {'message': '이미 있는 휴대폰번호입니다.'}})
+    },
+    tags=['User']
+)
+
+# 휴대폰번호 중복검사
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def duplicate_phonenumber(request):
+    target_num = request.data.get('p_num')
+    User = get_user_model()
+    user = User.objects.filter(p_num=target_num)
+    if not user.exists():
+        return Response({'message': '해당 휴대폰 번호는 사용 가능합니다.'}, status=status.HTTP_200_OK)
+    data = {'message' : '이미 있는 휴대폰 번호입니다.'}
+    return Response(data, status=status.HTTP_400_BAD_REQUEST)
 
 # 이메일 인증코드 보내기
 @swagger_auto_schema(
@@ -463,6 +534,7 @@ from dj_rest_auth.registration.views import SocialLoginView
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from allauth.socialaccount.providers.google import views as google_view
 
+# 구글 로그인
 def google_login(request):
     scope = "https://www.googleapis.com/auth/userinfo.email"
     client_id = os.environ.get("SOCIAL_AUTH_GOOGLE_CLIENT_ID")
@@ -486,12 +558,15 @@ def google_callback(request):
 
     ### 1-3. 성공 시 access_token 가져오기
     access_token = token_req_json.get('access_token')
+    id_token = token_req_json.get('id_token')
 
     #################################################################
 
     # 2. 가져온 access_token으로 이메일값을 구글에 요청
     email_req = requests.get(f"https://www.googleapis.com/oauth2/v1/tokeninfo?access_token={access_token}")
     email_req_status = email_req.status_code
+    # token을 구글에 요청
+    # token_url = 'https://oauth2.googleapis.com/token'
 
     user_info_endpoint = "https://www.googleapis.com/oauth2/v1/userinfo"
     response = requests.get(user_info_endpoint, headers={"Authorization": f"Bearer {access_token}"})
@@ -504,6 +579,7 @@ def google_callback(request):
     email = email_req_json.get('email')
     user_info = response.json()
     name = user_info.get('name')
+    # print(email, name)
 
     # return JsonResponse({'access': access_token, 'email':email})
 
@@ -517,7 +593,7 @@ def google_callback(request):
         try:
             # FK로 연결되어 있는 socialaccount 테이블에서 해당 이메일의 유저가 있는지 확인
             social_user = SocialAccount.objects.get(user=user)
-            # 있는데 네이버 계정이 아니어도 에러
+            # 있는데 구글 계정이 아니어도 에러
             if social_user.provider != 'google':
                 return JsonResponse({'err_msg': 'no matching social type'}, status=status.HTTP_400_BAD_REQUEST)
         
@@ -525,10 +601,13 @@ def google_callback(request):
             # 소셜 계정이 없으면 새로 생성
             social_user = SocialAccount(user=user, provider='google', uid=email, extra_data=user_info, last_login=now())
             social_user.save()
-
-        # 이미 Google로 제대로 가입된 유저 => 로그인 & 해당 우저의 jwt 발급
+        
+        # 이미 Google로 제대로 가입된 유저 => 로그인 & 해당 유저의 jwt 발급
         data = {'access_token': access_token, 'code': code}
         accept = requests.post(f"{BASE_URL}api/user/google/login/finish/", data=data)
+        # print(access_token)
+        # print('-------------------------------')
+        # print(code)
         accept_status = accept.status_code
         # 뭔가 중간에 문제가 생기면 에러
         if accept_status != 200:
@@ -540,7 +619,7 @@ def google_callback(request):
 
     except User.DoesNotExist:
         # 전달받은 이메일로 기존에 가입된 유저가 아예 없으면 => 새로 회원가입 & 해당 유저의 jwt 발급
-        user = User(email=email, name=name)  # 필요한 필드 채우기
+        user = User(email=email)  # 필요한 필드 채우기
         # 전화번호, 비밀번호, 사업자등록번호, 사업자등록증을 따로 입력받기
         user.set_unusable_password()
         user.save()
