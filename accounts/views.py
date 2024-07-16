@@ -84,7 +84,8 @@ WHITE_LIST_EXT = [
 @permission_classes([AllowAny])
 def signup(request):
     data = request.data.copy()
-    store_name = request.data.get('store_name')
+    # store_name = request.data.get('store_name')
+    code = request.data.get('code')
     # 이미지 파일 가져오기
     uploaded_file = request.FILES.get('business_r')
     if uploaded_file:
@@ -95,7 +96,6 @@ def signup(request):
         data['business_r'] = uploaded_file
 
     serializer = UserSerializer(data=data)
-    store_serial = StoreSerializer(data=store_name)
     if serializer.is_valid(raise_exception=True):
         user = serializer.save()
         user.set_password(data['password'])
@@ -376,7 +376,8 @@ def delete_user(request):
 
 @swagger_auto_schema(
     method='post',
-    operation_description="이메일 중복확인",
+    operation_summary="이메일 중복확인",
+    operation_description="이메일 중복확인(누구나 가능)",
     request_body=openapi.Schema(
         type=openapi.TYPE_OBJECT,
         properties={
@@ -385,7 +386,7 @@ def delete_user(request):
         required=['email']
     ),
     responses={
-        200: openapi.Response(description='Success', examples={'application/json': {'email': 'example@example.com'}}),
+        200: openapi.Response(description='Success', examples={'application/json': {'message': '해당 아이디는 사용가능 합니다.'}}),
         400: openapi.Response(description='Email available', examples={'application/json': {'message': '해당 아이디는 사용가능합니다.'}})
     },
     tags=['User']
@@ -397,11 +398,41 @@ def delete_user(request):
 def duplicate_userid(request):
     target_email = request.data.get('email')
     User = get_user_model()
-    user = User.objects.filter(email=target_email)
+    user = User.objects.filter(email=target_email) 
     if not user.exists():
-        return Response({'message': '해당 아이디는 사용가능합니다.'}, status=status.HTTP_400_BAD_REQUEST)
-    data = {'email' : user.first().email}
-    return Response(data, status=status.HTTP_200_OK)
+        return Response({'message': '해당 아이디는 사용 가능합니다.'}, status=status.HTTP_200_OK)
+    data = {'message' : '이미 있는 아이디입니다.'}
+    return Response(data, status=status.HTTP_400_BAD_REQUEST)
+
+@swagger_auto_schema(
+    method='post',
+    operation_summary="휴대폰 중복확인",
+    operation_description="휴대폰 중복확인(누구나 가능)",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'p_num': openapi.Schema(type=openapi.TYPE_STRING, description='phone to check for duplication'),
+        },
+        required=['p_num']
+    ),
+    responses={
+        200: openapi.Response(description='Success', examples={'application/json': {'message': '해당 휴대폰번호는 사용 가능합니다.'}}),
+        400: openapi.Response(description='Email available', examples={'application/json': {'message': '이미 있는 휴대폰번호입니다.'}})
+    },
+    tags=['User']
+)
+
+# 휴대폰번호 중복검사
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def duplicate_phonenumber(request):
+    target_num = request.data.get('p_num')
+    User = get_user_model()
+    user = User.objects.filter(p_num=target_num)
+    if not user.exists():
+        return Response({'message': '해당 휴대폰 번호는 사용 가능합니다.'}, status=status.HTTP_200_OK)
+    data = {'message' : '이미 있는 휴대폰 번호입니다.'}
+    return Response(data, status=status.HTTP_400_BAD_REQUEST)
 
 # 이메일 인증코드 보내기
 @swagger_auto_schema(
