@@ -33,6 +33,7 @@ from drf_yasg import openapi
 
 # 구글 소셜로그인 변수 설정
 state = os.environ.get("STATE")
+# 해당 BASE_URL은 로컬 이후에 서버에 맞게 바꿔줘야함
 BASE_URL = 'http://127.0.0.1:8000/'
 GOOGLE_CALLBACK_URI = BASE_URL + 'api/user/google/callback/'
 
@@ -345,8 +346,12 @@ def delete_user(request):
                 
         # 사용자 탈퇴 로직 (예: 사용자 데이터 삭제)
         user.delete()
+        # 탈퇴시 클라이언트 쿠키 삭제
+        response = HttpResponse("성공적으로 탈퇴되었습니다!!")
+        response.delete_cookie('access_token')
+        response.delete_cookie('refresh_token')
         
-        return Response({'message': 'Account has been deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+        return response
     
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -463,6 +468,7 @@ from dj_rest_auth.registration.views import SocialLoginView
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from allauth.socialaccount.providers.google import views as google_view
 
+# 구글 로그인
 def google_login(request):
     scope = "https://www.googleapis.com/auth/userinfo.email"
     client_id = os.environ.get("SOCIAL_AUTH_GOOGLE_CLIENT_ID")
@@ -486,12 +492,15 @@ def google_callback(request):
 
     ### 1-3. 성공 시 access_token 가져오기
     access_token = token_req_json.get('access_token')
+    id_token = token_req_json.get('id_token')
 
     #################################################################
 
     # 2. 가져온 access_token으로 이메일값을 구글에 요청
     email_req = requests.get(f"https://www.googleapis.com/oauth2/v1/tokeninfo?access_token={access_token}")
     email_req_status = email_req.status_code
+    # token을 구글에 요청
+    # token_url = 'https://oauth2.googleapis.com/token'
 
     user_info_endpoint = "https://www.googleapis.com/oauth2/v1/userinfo"
     response = requests.get(user_info_endpoint, headers={"Authorization": f"Bearer {access_token}"})
@@ -504,6 +513,7 @@ def google_callback(request):
     email = email_req_json.get('email')
     user_info = response.json()
     name = user_info.get('name')
+    # print(email, name)
 
     # return JsonResponse({'access': access_token, 'email':email})
 
@@ -517,7 +527,7 @@ def google_callback(request):
         try:
             # FK로 연결되어 있는 socialaccount 테이블에서 해당 이메일의 유저가 있는지 확인
             social_user = SocialAccount.objects.get(user=user)
-            # 있는데 네이버 계정이 아니어도 에러
+            # 있는데 구글 계정이 아니어도 에러
             if social_user.provider != 'google':
                 return JsonResponse({'err_msg': 'no matching social type'}, status=status.HTTP_400_BAD_REQUEST)
         
@@ -525,10 +535,13 @@ def google_callback(request):
             # 소셜 계정이 없으면 새로 생성
             social_user = SocialAccount(user=user, provider='google', uid=email, extra_data=user_info, last_login=now())
             social_user.save()
-
-        # 이미 Google로 제대로 가입된 유저 => 로그인 & 해당 우저의 jwt 발급
+        
+        # 이미 Google로 제대로 가입된 유저 => 로그인 & 해당 유저의 jwt 발급
         data = {'access_token': access_token, 'code': code}
         accept = requests.post(f"{BASE_URL}api/user/google/login/finish/", data=data)
+        # print(access_token)
+        # print('-------------------------------')
+        # print(code)
         accept_status = accept.status_code
         # 뭔가 중간에 문제가 생기면 에러
         if accept_status != 200:
@@ -540,7 +553,7 @@ def google_callback(request):
 
     except User.DoesNotExist:
         # 전달받은 이메일로 기존에 가입된 유저가 아예 없으면 => 새로 회원가입 & 해당 유저의 jwt 발급
-        user = User(email=email, name=name)  # 필요한 필드 채우기
+        user = User(email=email)  # 필요한 필드 채우기
         # 전화번호, 비밀번호, 사업자등록번호, 사업자등록증을 따로 입력받기
         user.set_unusable_password()
         user.save()
