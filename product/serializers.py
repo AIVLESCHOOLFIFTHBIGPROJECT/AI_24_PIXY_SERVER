@@ -7,13 +7,11 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = '__all__'
         extra_kwargs = {
             'p_num': {'help_text':'상품시퀀스번호'},
-            'name': {'help_text':'상품이름'},
-            'price': {'help_text':'상품가격'},
-            'sub_category': {'help_text':'상품서브카테고리'},
-            'quantity': {'help_text':'상품카테고리'},
-            'position': {'help_text':'상품위치'},
-            'sales': {'help_text':'할인율'},
-            'date': {'help_text':'상품재입고날짜'}
+            's_num': {'help_text':'판매시퀀스번호'},
+            'date': {'help_text':'상품날짜'},
+            'category':{'help_text':'상품카테고리'},
+            'sales': {'help_text':'판매량'},
+            'holiday': {'help_text':'휴일여부'}
         }
 
 
