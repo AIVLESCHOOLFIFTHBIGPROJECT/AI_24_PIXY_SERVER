@@ -38,6 +38,7 @@ jobs:
         DATABASE_HOST: ${{ secrets.DATABASE_HOST }}
         DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
         DOMAIN: ${{ secrets.DOMAIN }}
+        API_DOMAIN: ${{ secrets.API_DOMAIN }}
         PUBLIC_IPv4: ${{ secrets.PUBLIC_IPv4 }}
         LOCAL_HOST: ${{ secrets.LOCAL_HOST }}
         EMAIL_BACKEND: ${{ secrets.EMAIL_BACKEND }}
@@ -47,5 +48,13 @@ jobs:
         EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
         EMAIL_USE_TLS: ${{ secrets.EMAIL_USE_TLS }}
         DEFAULT_FROM_EMAIL: ${{ secrets.DEFAULT_FROM_EMAIL }}
+        SOCIAL_AUTH_GOOGLE_CLIENT_ID: ${{ secrets.SOCIAL_AUTH_GOOGLE_CLIENT_ID }}
+        SOCIAL_AUTH_GOOGLE_SECRET: ${{ secrets.SOCIAL_AUTH_GOOGLE_SECRET }}
+        STATE: ${{ secrets.STATE }}
+        SOCIAL_AUTH_NAVER_CLIENT_ID: ${{ secrets.SOCIAL_AUTH_NAVER_CLIENT_ID }}
+        SOCIAL_AUTH_NAVER_SECRET: ${{ secrets.SOCIAL_AUTH_NAVER_SECRET }}
+        REDIS_USERNAME: ${{ secrets.STATE }}
+        REDIS_PASSWORD: ${{ secrets.STATE }}
+        REDIS_PORT: ${{ secrets.STATE }}
       run: |
         python manage.py test

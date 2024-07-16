@@ -15,10 +15,11 @@ pymysql.install_as_MySQLdb()
 SECRET_KEY = env('SECRET_KEY')
 DEBUG = env.bool('DEBUG', default=False)
 DOMAIN = env('DOMAIN')
+API_DOMAIN = env('API_DOMAIN')
 PUBLIC_IPv4 = env('PUBLIC_IPv4')
 LOCAL_HOST = env('LOCAL_HOST')
 
-ALLOWED_HOSTS = [DOMAIN, PUBLIC_IPv4, LOCAL_HOST]
+ALLOWED_HOSTS = [DOMAIN, API_DOMAIN, PUBLIC_IPv4, LOCAL_HOST]
 
 
 # Application definition
@@ -29,14 +30,28 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    'django.contrib.sites',
     
     'accounts',
+    'notice',
     'post',
     'product',
+    'store',
     'rest_framework',
+    'rest_framework.authtoken',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'drf_yasg',
+    'dj_rest_auth',
+    'dj_rest_auth.registration',
+
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
+    'allauth.socialaccount.providers.naver',
+    'notifications',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -47,7 +62,17 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    'allauth.account.middleware.AccountMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
 ]
+
+CORS_ALLOWED_ORIGINS = [
+    "https://pixy.kro.kr",
+    "http://localhost:3000",  # 개발 환경용
+]
+
+CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = "pixy.urls"
 
@@ -69,6 +94,33 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "pixy.wsgi.application"
 
+REDIS_USERNAME = env('REDIS_USERNAME')
+REDIS_PASSWORD = env('REDIS_PASSWORD')
+REDIS_PORT = env('REDIS_PORT')
+
+# Redis
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': f"redis://{REDIS_USERNAME}:{REDIS_PASSWORD}@{PUBLIC_IPv4}:{REDIS_PORT}",
+    }
+}
+
+# Swagger Authorize
+SWAGGER_SETTINGS = {
+    'USE_SESSION_AUTH': False,
+    'SECURITY_DEFINITIONS': {
+        'BearerAuth': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header',
+            'description': "JWT Token"
+        }
+    },
+    'SECURITY_REQUIREMENTS': [{
+        'BearerAuth': []
+    }]
+}
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
@@ -131,6 +183,8 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',  # JWT를 통한 인증방식 사용
     ),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 3,
 }
 
 REST_USE_JWT = True
@@ -157,3 +211,15 @@ EMAIL_HOST_USER=env('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD=env('EMAIL_HOST_PASSWORD')
 EMAIL_USE_TLS=True
 DEFAULT_FROM_EMAIL=EMAIL_HOST_USER
+
+# 소셜 로그인
+# 사이트는 1개만 사용할 것이라고 명시
+SITE_ID = 1
+
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None # username 필드 사용 x
+ACCOUNT_EMAIL_REQUIRED = True            # email 필드 사용 o
+ACCOUNT_USERNAME_REQUIRED = False        # username 필드 사용 x
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+SOCIAL_AUTH_GOOGLE_CLIENT_ID = env('SOCIAL_AUTH_GOOGLE_CLIENT_ID')
+SOCIAL_AUTH_GOOGLE_SECRET = env('SOCIAL_AUTH_GOOGLE_SECRET')
+STATE = env('STATE')
