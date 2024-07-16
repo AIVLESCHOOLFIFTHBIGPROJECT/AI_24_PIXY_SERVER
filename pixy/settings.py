@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'drf_yasg',
     'dj_rest_auth',
     'dj_rest_auth.registration',
+    'storages',
 
     'allauth',
     'allauth.account',
@@ -198,7 +199,7 @@ SIMPLE_JWT = {
     'BLACKLIST_AFTER_ROTATION': True,
 }
 # 이미지 추가
-MEDIA_URL = '/media/'
+# MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # 비밀번호 재설정(이메일 수신 : 발신(google))
@@ -221,3 +222,13 @@ ACCOUNT_AUTHENTICATION_METHOD = 'email'
 SOCIAL_AUTH_GOOGLE_CLIENT_ID = env('SOCIAL_AUTH_GOOGLE_CLIENT_ID')
 SOCIAL_AUTH_GOOGLE_SECRET = env('SOCIAL_AUTH_GOOGLE_SECRET')
 STATE = env('STATE')
+
+# S3 Storages
+AWS_ACCESS_KEY_ID = env('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY')
+AWS_REGION = env('AWS_REGION')
+
+AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME')
+AWS_S3_CUSTOM_DOMAIN = '%s.s3.%s.amazonaws.com' % (AWS_STORAGE_BUCKET_NAME, AWS_REGION)
+DEFAULT_FILE_STORAGE = env('DEFAULT_FILE_STORAGE')
+MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
