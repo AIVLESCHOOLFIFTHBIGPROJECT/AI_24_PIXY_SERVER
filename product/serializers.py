@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Product,Sales,Order
+from .models import Product,Sales
 
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
@@ -11,7 +11,10 @@ class ProductSerializer(serializers.ModelSerializer):
             'date': {'help_text':'상품날짜'},
             'category':{'help_text':'상품카테고리'},
             'sales': {'help_text':'판매량'},
-            'holiday': {'help_text':'휴일여부'}
+            'holiday': {'help_text':'휴일여부'},
+            'promotion': {'help_text':'할인여부'},
+            'stock': {'help_text':'재고'},
+            
         }
 
 
@@ -26,19 +29,21 @@ class SalesSerializer(serializers.ModelSerializer):
             's_num2': {'help_text':'매장시퀀스번호'},
             's_rate': {'help_text':'판매량'},
             's_date': {'help_text':'판매날짜'},
+            'promotion': {'help_text':'할인여부'},
+            'stock': {'help_text':'재고'},
         }
 
-class OrderSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Order
-        fields = '__all__'
-        extra_kwargs = {
-            's_num': {'help_text':'재고시퀀스번호'},
-            'p_num': {'help_text':'상품시퀀스번호'},
-            's_num2': {'help_text':'매장시퀀스번호'},
-            'quantity': {'help_text':'수량'},
-            'date': {'help_text':'발주날짜'},
-        }
+# class OrderSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Order
+#         fields = '__all__'
+#         extra_kwargs = {
+#             's_num': {'help_text':'재고시퀀스번호'},
+#             'p_num': {'help_text':'상품시퀀스번호'},
+#             's_num2': {'help_text':'매장시퀀스번호'},
+#             'quantity': {'help_text':'수량'},
+#             'date': {'help_text':'발주날짜'},
+#         }
         
 # class DocumentSerializer(serializers.ModelSerializer):
 #     class Meta:

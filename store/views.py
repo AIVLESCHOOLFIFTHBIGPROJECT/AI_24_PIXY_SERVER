@@ -153,7 +153,9 @@ def StoreUploadList(request):
                             date=row['date'],
                             category=row['category'],
                             sales=row['sales'],
-                            holiday=bool(int(row['holiday'])) # 0과 1을 Boolean 으로 변환
+                            holiday=bool(int(row['holiday'])), # 0과 1을 Boolean 으로 변환
+                            promotion=row['promotion'],
+                            stock=row['stock'],
                         )
             except Exception as e:
                 return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
