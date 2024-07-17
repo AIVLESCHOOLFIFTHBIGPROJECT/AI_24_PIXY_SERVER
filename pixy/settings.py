@@ -3,6 +3,7 @@ import environ
 import sys, os, json
 import pymysql
 
+
 # environ 설정
 env = environ.Env(
     DEBUG = (bool, False)
@@ -44,6 +45,7 @@ INSTALLED_APPS = [
     'drf_yasg',
     'dj_rest_auth',
     'dj_rest_auth.registration',
+    'fire_detection',
 
     'allauth',
     'allauth.account',
