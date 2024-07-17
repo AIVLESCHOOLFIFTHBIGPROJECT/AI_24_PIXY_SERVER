@@ -18,3 +18,14 @@ class StoreUpload(models.Model):
 
     def __str__(self):
         return self.f_name
+
+
+class PredictUpload(models.Model):
+    u_num = models.BigAutoField(primary_key=True)
+    s_num = models.ForeignKey(Store, on_delete=models.CASCADE)
+    m_num = models.ForeignKey(User, on_delete=models.CASCADE)
+    f_name = models.CharField(max_length=255)
+    uploaded_file = models.FileField(upload_to='predict/', null=True)
+
+    def __str__(self):
+        return self.f_name
