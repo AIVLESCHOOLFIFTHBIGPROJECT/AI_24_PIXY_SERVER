@@ -273,10 +273,12 @@ def PredictUploadList(request):
                 df2=pd.get_dummies(df, columns=['category'])
                 df2=df2.set_index('date')
 
-                # 모델 로드 (여기에서 파일명을 실제 파일명으로 변경)
-                model_path = os.path.join(settings.BASE_DIR, 'media/weight', 'saved_model.pickle')
-                with open(model_path, 'rb') as f:
-                    model = pickle.load(f)
+                    # 모델 파일 S3에서 읽기
+                model_s3_key ='model/saved_model.pickle'  # 모델 파일의 S3 경로 설정
+                model_obj = s3_client.get_object(Bucket=bucket_name, Key=model_s3_key)
+                model_body = model_obj['Body']
+                model = pickle.load(model_body)
+
 
                 # 예측 
                 df['predicted_sales'] = model.predict(df2)
