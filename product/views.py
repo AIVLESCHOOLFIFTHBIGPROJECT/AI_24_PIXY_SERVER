@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework import generics
-from .models import Product,Sales,Order
-from .serializers import ProductSerializer,SalesSerializer,OrderSerializer
+from .models import Product,Sales
+from .serializers import ProductSerializer,SalesSerializer
 
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes,parser_classes
@@ -180,86 +180,86 @@ def SalesDetail(request, pk):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 # order list
-@swagger_auto_schema(
-    method='get',
-    tags=['Order'],
-    operation_summary="List all orders",
-    operation_description="Get a list of all order entries",
-    responses={200: OrderSerializer(many=True)},
-)
-@swagger_auto_schema(
-    method='post',
-    tags=['Order'],
-    operation_summary="Create a new order",
-    operation_description="Create a new order entry",
-    request_body=OrderSerializer,
-    responses={201: OrderSerializer, 400: 'Bad Request'}
-)
-@api_view(['GET', 'POST'])
-@permission_classes([AllowAny])
-def OrderList(request):
-    # Read
-    if request.method == 'GET':
-        order = Order.objects.all()
-        serializer = OrderSerializer(order, many=True)
-        return Response(serializer.data)
+# @swagger_auto_schema(
+#     method='get',
+#     tags=['Order'],
+#     operation_summary="List all orders",
+#     operation_description="Get a list of all order entries",
+#     responses={200: OrderSerializer(many=True)},
+# )
+# @swagger_auto_schema(
+#     method='post',
+#     tags=['Order'],
+#     operation_summary="Create a new order",
+#     operation_description="Create a new order entry",
+#     request_body=OrderSerializer,
+#     responses={201: OrderSerializer, 400: 'Bad Request'}
+# )
+# @api_view(['GET', 'POST'])
+# @permission_classes([AllowAny])
+# def OrderList(request):
+#     # Read
+#     if request.method == 'GET':
+#         order = Order.objects.all()
+#         serializer = OrderSerializer(order, many=True)
+#         return Response(serializer.data)
 
-    # Create
-    elif request.method == 'POST':
-        serializer = OrderSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=404)
+#     # Create
+#     elif request.method == 'POST':
+#         serializer = OrderSerializer(data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data, status=201)
+#         return Response(serializer.errors, status=404)
 
-# order detail
-@swagger_auto_schema(
-    method='get',
-    tags=['Order'],
-    operation_summary="Retrieve an order",
-    operation_description="Get details of a specific order entry",
-    responses={200: OrderSerializer, 404: 'Not Found'}
-)
-@swagger_auto_schema(
-    method='put',
-    tags=['Order'],
-    operation_summary="Update an order",
-    operation_description="Update an existing order entry",
-    request_body=OrderSerializer,
-    responses={200: OrderSerializer, 400: 'Bad Request', 404: 'Not Found'}
-)
-@swagger_auto_schema(
-    method='delete',
-    tags=['Order'],
-    operation_summary="Delete an order",
-    operation_description="Delete a specific order entry",
-    responses={204: 'No Content', 404: 'Not Found'}
-)
-@api_view(['GET', 'PUT', 'DELETE'])
-@permission_classes([AllowAny])
-def OrderDetail(request, pk):
-    try:
-        order = Order.objects.get(pk=pk)
-    except Order.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
+# # order detail
+# @swagger_auto_schema(
+#     method='get',
+#     tags=['Order'],
+#     operation_summary="Retrieve an order",
+#     operation_description="Get details of a specific order entry",
+#     responses={200: OrderSerializer, 404: 'Not Found'}
+# )
+# @swagger_auto_schema(
+#     method='put',
+#     tags=['Order'],
+#     operation_summary="Update an order",
+#     operation_description="Update an existing order entry",
+#     request_body=OrderSerializer,
+#     responses={200: OrderSerializer, 400: 'Bad Request', 404: 'Not Found'}
+# )
+# @swagger_auto_schema(
+#     method='delete',
+#     tags=['Order'],
+#     operation_summary="Delete an order",
+#     operation_description="Delete a specific order entry",
+#     responses={204: 'No Content', 404: 'Not Found'}
+# )
+# @api_view(['GET', 'PUT', 'DELETE'])
+# @permission_classes([AllowAny])
+# def OrderDetail(request, pk):
+#     try:
+#         order = Order.objects.get(pk=pk)
+#     except Order.DoesNotExist:
+#         return Response(status=status.HTTP_404_NOT_FOUND)
 
-    # Detail
-    if request.method == 'GET':
-        serializer = OrderSerializer(order)
-        return Response(serializer.data)
+#     # Detail
+#     if request.method == 'GET':
+#         serializer = OrderSerializer(order)
+#         return Response(serializer.data)
 
-    # Update
-    elif request.method == 'PUT':
-        serializer = OrderSerializer(order, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#     # Update
+#     elif request.method == 'PUT':
+#         serializer = OrderSerializer(order, data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    # Delete
-    elif request.method == 'DELETE':
-        order.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+#     # Delete
+#     elif request.method == 'DELETE':
+#         order.delete()
+#         return Response(status=status.HTTP_204_NO_CONTENT)
 
 # #documnet
 # @swagger_auto_schema(

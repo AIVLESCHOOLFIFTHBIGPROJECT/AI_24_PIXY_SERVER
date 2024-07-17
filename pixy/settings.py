@@ -71,6 +71,7 @@ MIDDLEWARE = [
 CORS_ALLOWED_ORIGINS = [
     "https://pixy.kro.kr",
     "http://localhost:3000",  # 개발 환경용
+    "http://localhost:8000",  # 개발 환경용
 ]
 
 CORS_ALLOW_CREDENTIALS = True
