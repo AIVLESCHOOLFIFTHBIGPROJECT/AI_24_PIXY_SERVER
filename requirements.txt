@@ -35,9 +35,3 @@ django-cors-headers==4.4.0
 numpy==1.26.4
 pandas==2.2.2
 scipy==1.14.0
-opencv-python-headless==4.10.0.84
-torch==2.3.1
-torchvision==0.18.1
-tqdm==4.66.4
-mediapipe==0.10.14
-ultralytics
