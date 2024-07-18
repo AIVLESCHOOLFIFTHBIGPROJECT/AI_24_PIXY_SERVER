@@ -24,7 +24,7 @@ PIXY는 KT Aivle 5기 과정에서 개발된 혁신적인 AI 기반 예측 및 �
 - 프론트엔드: React, Redux, Material-UI
 - 백엔드: Django, Django REST Framework, Celery
 - 데이터베이스: PostgreSQL, Redis
-- AI/ML: TensorFlow, PyTorch, Scikit-learn, XGBoost
+- AI/ML: TensorFlow, PyTorch, Scikit-learn, RandomForest
 - 인프라: Docker, Kubernetes, AWS
 
 ## 설치 및 실행
