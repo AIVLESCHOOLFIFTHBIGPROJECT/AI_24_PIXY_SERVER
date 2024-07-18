@@ -6,4 +6,4 @@ class Video(models.Model):
     fire_detected = models.BooleanField(default=False)
 
     def __str__(self):
-        return self.file.name
+        return self.video_file.name
