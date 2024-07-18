@@ -203,7 +203,7 @@ SIMPLE_JWT = {
 }
 # 이미지 추가
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # 비밀번호 재설정(이메일 수신 : 발신(google))
 EMAIL_BACKEND=env('EMAIL_BACKEND')

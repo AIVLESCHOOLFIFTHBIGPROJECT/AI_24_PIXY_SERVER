@@ -11,12 +11,12 @@
         <button type="submit">Upload</button>
     </form>
     
-    {% comment %} {% if uploaded_file_url %}
+    {% if uploaded_file_url %}
         <h2>Original Video:</h2>
         <video width="600" controls>
             <source src="{{ uploaded_file_url }}" type="video/mp4">
         </video>
-    {% endif %} {% endcomment %}
+    {% endif %}
     {% if output_url %}
         <h2>Processed Video:</h2>
         <video width="600" controls>
