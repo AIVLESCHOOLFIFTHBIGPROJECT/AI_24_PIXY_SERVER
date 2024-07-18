@@ -12,15 +12,17 @@ from drf_yasg import openapi
 from .models import Notice
 from notice.serializers import NoticeSerializer
 
-### notice create ###
 @swagger_auto_schema(
     method='post',
     tags=['Notice'],
-    operation_summary="Create a new notice",
-    operation_description="Create a new notice. Only admin users can create notices.",
     request_body=NoticeSerializer,
-    responses={201: NoticeSerializer}
+    responses={
+        201: openapi.Response('Created', NoticeSerializer),
+        400: 'Bad Request',
+    },
+    operation_description="Create a new notice. Only admin users can create notices."
 )
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated, IsAdminUser])  # 어드민 유저만 공지사항 작성 가능
 @authentication_classes([JWTAuthentication])  # JWT 토큰 확인

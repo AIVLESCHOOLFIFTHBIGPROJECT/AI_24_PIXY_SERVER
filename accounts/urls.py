@@ -23,7 +23,8 @@ urlpatterns = [
     path('naver/callback/', views.naver_callback, name='naver_callback'),
     path('naver/login/finish/', views.NaverLogin.as_view(), name='naver_login_todjango'),
     # 이메일 인증(비밀번호 찾기)
-    path('send-code/', views.send_verification_code, name='send_code'),
+    path('send-code/user', views.send_verification_code, name='send_code_user'),
+    path('send-code/nonuser', views.non_user_sendcode, name='send_code_nonuser'),
     path('verify-code/', views.verify_code, name='verify_code'),
     path('reset-password/', views.reset_password, name='reset_password'),
 ]
