@@ -59,6 +59,7 @@ WHITE_LIST_EXT = [
         openapi.Parameter('p_num', openapi.IN_FORM, type=openapi.TYPE_STRING, description="Phone number", required=True),
         openapi.Parameter('r_num', openapi.IN_FORM, type=openapi.TYPE_STRING, description="Registration number", required=True),
         openapi.Parameter('password', openapi.IN_FORM, type=openapi.TYPE_STRING, description="Password", required=True),
+        openapi.Parameter('access_code', openapi.IN_FORM, type=openapi.TYPE_STRING, description="access_code", required=True),
         openapi.Parameter('is_agreement1', openapi.IN_FORM, type=openapi.TYPE_BOOLEAN, description="Agreement 1", required=True),
         openapi.Parameter('is_agreement2', openapi.IN_FORM, type=openapi.TYPE_BOOLEAN, description="Agreement 2", required=True),
         openapi.Parameter('is_agreement3', openapi.IN_FORM, type=openapi.TYPE_BOOLEAN, description="Agreement 3", required=True),
@@ -171,17 +172,17 @@ def login(request):
         'name': user.name
     })
     # 쿠키 저장(refresh token, access token)
-    response.set_cookie(
-        key='access_token',
-        value=str(refresh.access_token),
-        httponly=True,
-        secure=True,  # HTTPS를 사용할 경우 True로 설정
-        samesite='Lax'
-    )
+    # response.set_cookie(
+    #     key='access_token',
+    #     value=str(refresh.access_token),
+    #     httponly=True,
+    #     secure=True,  # HTTPS를 사용할 경우 True로 설정
+    #     samesite='Lax'
+    # )
     response.set_cookie(
         key='refresh_token',
         value=str(refresh),
-        httponly=True,
+        # httponly=True,
         secure=True,  # HTTPS를 사용할 경우 True로 설정
         samesite='Lax'
     )
@@ -228,7 +229,7 @@ def logout(request):
     try:
         # 쿠키 삭제
         response = HttpResponse("로그아웃 성공!!")
-        response.delete_cookie('access_token')
+        # response.delete_cookie('access_token')
         response.delete_cookie('refresh_token')
         # refresh토큰 blacklist에 추가
         refresh_token = request.data.get("refresh_token")
