@@ -31,6 +31,7 @@ jobs:
         pip install opencv-python
         pip install mediapipe
         pip install tensorflow-cpu
+        pip install ultralytics
     - name: Run Tests
       env:
         SECRET_KEY: ${{ secrets.SECRET_KEY }}
