@@ -27,9 +27,9 @@ def get_kst_time():
     return datetime.now(kst)
 
 
-# def transform_s3_url(url):
-#     parsed_url = urlparse(url)
-#     return urlunparse((parsed_url.scheme, settings.AWS_S3_CUSTOM_DOMAIN, parsed_url.path, parsed_url.params, parsed_url.query, parsed_url.fragment))
+def transform_s3_url(url):
+    parsed_url = urlparse(url)
+    return urlunparse((parsed_url.scheme, settings.AWS_S3_CUSTOM_DOMAIN, parsed_url.path, parsed_url.params, parsed_url.query, parsed_url.fragment))
 
 
 def safe_filename(filename):

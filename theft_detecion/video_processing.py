@@ -66,7 +66,10 @@ class CustomLSTM(tf.keras.layers.LSTM):
 
 
 # LSTM 모델 로드
-model_path = '/home/ubuntu/deploy/AI_24_PIXY_SERVER/theft_detecion/theft_detection_lstm_model.h5'
+# model_path = '/home/ubuntu/deploy/AI_24_PIXY_SERVER/theft_detecion/theft_detection_lstm_model.h5'
+# 현재 파일의 디렉토리를 기준으로 상대 경로 설정
+current_dir = os.path.dirname(os.path.abspath(__file__))
+model_path = os.path.join(current_dir, 'theft_detection_lstm_model.h5')
 if not os.path.exists(model_path):
     raise FileNotFoundError(f"Model file not found: {model_path}")
 
