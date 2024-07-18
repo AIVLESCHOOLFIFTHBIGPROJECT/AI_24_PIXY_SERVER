@@ -59,7 +59,6 @@ WHITE_LIST_EXT = [
         openapi.Parameter('p_num', openapi.IN_FORM, type=openapi.TYPE_STRING, description="Phone number", required=True),
         openapi.Parameter('r_num', openapi.IN_FORM, type=openapi.TYPE_STRING, description="Registration number", required=True),
         openapi.Parameter('password', openapi.IN_FORM, type=openapi.TYPE_STRING, description="Password", required=True),
-        openapi.Parameter('access_code', openapi.IN_FORM, type=openapi.TYPE_STRING, description="access_code", required=True),
         openapi.Parameter('is_agreement1', openapi.IN_FORM, type=openapi.TYPE_BOOLEAN, description="Agreement 1", required=True),
         openapi.Parameter('is_agreement2', openapi.IN_FORM, type=openapi.TYPE_BOOLEAN, description="Agreement 2", required=True),
         openapi.Parameter('is_agreement3', openapi.IN_FORM, type=openapi.TYPE_BOOLEAN, description="Agreement 3", required=True),
@@ -270,7 +269,7 @@ def logout(request):
     operation_summary="회원정보 수정",
     operation_description="회원정보 수정(로그인한 사람만 가능)",
     manual_parameters=[
-        openapi.Parameter('business_r', openapi.IN_FORM, type=openapi.TYPE_FILE, description="User image", required=True),
+        openapi.Parameter('business_r', openapi.IN_FORM, type=openapi.TYPE_FILE, description="User image", required=False),
         openapi.Parameter('name', openapi.IN_FORM, type=openapi.TYPE_STRING, description="User name", required=True),
         openapi.Parameter('p_num', openapi.IN_FORM, type=openapi.TYPE_STRING, description="Phone number", required=True),
         openapi.Parameter('r_num', openapi.IN_FORM, type=openapi.TYPE_STRING, description="Registration number", required=True),
@@ -304,9 +303,6 @@ def profile(request):
         old_image_path = request.user.business_r
         BASE_DIR = Path(__file__).resolve().parent.parent
         MEDIA_ROOT = os.path.join(BASE_DIR)
-        # 기존 이미지 삭제
-        if old_image_path and os.path.exists(MEDIA_ROOT+old_image_path.url):
-            os.remove(MEDIA_ROOT+old_image_path.url)
         # 이미지 파일 가져오기
         uploaded_file = request.FILES.get('business_r')
         if uploaded_file:
@@ -314,7 +310,10 @@ def profile(request):
             file_extension = os.path.splitext(uploaded_file.name)[1].lower()
             if file_extension not in WHITE_LIST_EXT:
                 return Response({"detail": "Only .jpg and .jpeg and .png files are allowed."}, status=status.HTTP_400_BAD_REQUEST)
-        data['business_r'] = uploaded_file
+            data['business_r'] = uploaded_file
+            # (업로드 파일이 있을 때만)기존 이미지 삭제
+            if old_image_path and os.path.exists(MEDIA_ROOT+old_image_path.url):
+                os.remove(MEDIA_ROOT+old_image_path.url)
         serializer = UserInfoSerializer(request.user, data=data, partial=True)
         if serializer.is_valid():
             # Update
@@ -363,14 +362,18 @@ def delete_user(request):
             if not BlacklistedToken.objects.filter(token=token).exists():
                 # 토큰을 블랙리스트에 추가
                 BlacklistedToken.objects.create(token=token)
-                
+        # 이미지 파일 삭제
+        if user.business_r:
+            user.business_r.delete(save=False)
+        # 매장 삭제
+        store = Store.objects.get(m_num=user)  # user의 기본키로 Store 객체 조회
+        store.delete()
         # 사용자 탈퇴 로직 (예: 사용자 데이터 삭제)
         user.delete()
         # 탈퇴시 클라이언트 쿠키 삭제
         response = HttpResponse("성공적으로 탈퇴되었습니다!!")
         # response.delete_cookie('access_token')
         response.delete_cookie('refresh_token')
-        
         return response
     
     except Exception as e:
