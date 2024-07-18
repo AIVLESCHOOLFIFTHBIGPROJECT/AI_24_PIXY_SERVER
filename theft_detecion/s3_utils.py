@@ -6,12 +6,15 @@ def list_processed_videos():
     s3 = boto3.client('s3',
                       aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
                       aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-                      region_name=settings.AWS_S3_REGION_NAME)
+                      region_name=settings.AWS_REGION)
 
     response = s3.list_objects_v2(
-        Bucket=settings.AWS_STORAGE_BUCKET_NAME, Prefix='videos/processed/')
+        Bucket=settings.AWS_STORAGE_BUCKET_NAME, Prefix='media/videos/processed/')
 
     if 'Contents' in response:
-        return [f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/{obj['Key']}" for obj in response['Contents']]
+        video_urls = [
+            f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/{obj['Key']}" for obj in response['Contents']]
+        print(f"Processed videos: {video_urls}")
+        return video_urls
     else:
         return []

@@ -10,6 +10,10 @@ from urllib.parse import urlparse
 import tensorflow as tf
 from ultralytics import YOLO
 
+# 랜덤 시드 고정
+np.random.seed(42)
+tf.random.set_seed(42)
+
 s3_client = boto3.client(
     's3',
     aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
@@ -110,11 +114,32 @@ def upload_file_to_s3_2(file_path, bucket_name, s3_key):
         logger.info(f"Successfully uploaded {s3_key} to {bucket_name}")
         # 파일의 URL을 반환
         s3_url = f"https://{bucket_name}.s3.{settings.AWS_REGION}.amazonaws.com/{s3_key}"
-        logger.info(f"Uploaded file URL: {s3_url}")  # URL을 로그에 출력
+        print(f"Uploaded file URL: {s3_url}")  # URL을 로그에 출력
         return s3_url
     except Exception as e:
         logger.error(f"Error uploading file to S3: {e}")
         raise
+
+
+def extract_features(pose_data):
+    X = []
+    frames = []
+    for frame, poses in pose_data.items():
+        frames.append(frame)
+        for pose in poses:
+            features = [lm['x'] for lm in pose] + [lm['y']
+                                                   for lm in pose] + [lm['z'] for lm in pose]
+            X.append(features)
+    return np.array(X), frames
+
+
+def create_sequences(data, frames, sequence_length):
+    sequences = []
+    sequence_frames = []
+    for i in range(len(data) - sequence_length + 1):
+        sequences.append(data[i:i + sequence_length])
+        sequence_frames.append(frames[i:i + sequence_length])
+    return np.array(sequences), sequence_frames
 
 
 def process_video(s3_input_url, s3_output_name, upload_time):
@@ -124,120 +149,129 @@ def process_video(s3_input_url, s3_output_name, upload_time):
     with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as output_tmp_file:
         local_output_path = output_tmp_file.name
 
+    download_file_from_s3(settings.AWS_STORAGE_BUCKET_NAME,
+                          s3_input_url, local_input_path)
+    cap = cv2.VideoCapture(local_input_path)
+    length = 10
+    pose_data = {}
+
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    frame_interval = int(fps / 3)  # 1초에 3프레임 간격 설정
+
+    # 동영상 출력 설정
+    fourcc = cv2.VideoWriter_fourcc(*'avc1')
+    out = cv2.VideoWriter(local_output_path, fourcc, 10,
+                          (width, height))  # FPS를 10으로 설정
+
+    frame_count = 0
+    all_frames = []
+
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        if frame_count % frame_interval == 0:
+            frame_name = f'frame_{frame_count // frame_interval:04d}.jpg'
+            all_frames.append((frame_name, frame))
+
+            # YOLO를 사용하여 사람만 탐지
+            results_yolo = yolo_model.predict(frame, conf=0.5)
+            people_boxes = [box for box in results_yolo[0].boxes if int(
+                box.cls[0]) == 0]  # 사람만 선택
+
+            if people_boxes:
+                # 신뢰도가 가장 높은 바운딩 박스 선택
+                best_box = max(people_boxes, key=lambda box: box.conf[0])
+                x1, y1, x2, y2 = map(int, best_box.xyxy[0])
+                cv2.rectangle(frame, (x1, y1), (x2, y2),
+                              (0, 255, 0), 2)  # 바운딩 박스 그리기
+
+                # 바운딩 박스 내에서 포즈 추출
+                roi = frame[y1:y2, x1:x2]
+                image_rgb = cv2.cvtColor(roi, cv2.COLOR_BGR2RGB)
+                results = pose.process(image_rgb)
+
+                if results.pose_landmarks:
+                    pose_landmarks = results.pose_landmarks.landmark
+                    xy_list = [
+                        {'x': lm.x, 'y': lm.y, 'z': lm.z, 'visibility': lm.visibility} for idx, lm in enumerate(pose_landmarks)
+                        if idx not in excluded_landmarks
+                    ]
+
+                    # 기존 데이터가 없는 경우 초기화
+                    if frame_name not in pose_data:
+                        pose_data[frame_name] = []
+                    pose_data[frame_name].append(xy_list)
+
+                    # 랜드마크 그리기
+                    for idx, lm in enumerate(pose_landmarks):
+                        if idx not in excluded_landmarks:
+                            cx = int(lm.x * (x2 - x1) + x1)
+                            cy = int(lm.y * (y2 - y1) + y1)
+                            cv2.circle(frame, (cx, cy), 5, (0, 255, 0), -1)
+
+                    # 연결선 그리기
+                    for connection in mp_pose.POSE_CONNECTIONS:
+                        if connection[0] not in excluded_landmarks and connection[1] not in excluded_landmarks:
+                            start_idx = connection[0]
+                            end_idx = connection[1]
+                            if pose_landmarks[start_idx].visibility > 0.5 and pose_landmarks[end_idx].visibility > 0.5:
+                                start_point = (int(pose_landmarks[start_idx].x * (x2 - x1) + x1), int(
+                                    pose_landmarks[start_idx].y * (y2 - y1) + y1))
+                                end_point = (int(pose_landmarks[end_idx].x * (x2 - x1) + x1), int(
+                                    pose_landmarks[end_idx].y * (y2 - y1) + y1))
+                                cv2.line(frame, start_point,
+                                         end_point, (0, 255, 0), 2)
+
+        frame_count += 1
+
+    cap.release()
+
+    # 특징 추출
     try:
-        print(
-            f's3_input_url: {s3_input_url}, \n local_input_path: {local_input_path}')
-        download_file_from_s3(settings.AWS_STORAGE_BUCKET_NAME,
-                              s3_input_url, local_input_path)
-
-        cap = cv2.VideoCapture(local_input_path)
-        fps = cap.get(cv2.CAP_PROP_FPS)
-        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        frame_interval = int(fps / 3)  # 1초에 3프레임 간격 설정
-
-        # 동영상 출력 설정
-        fourcc = cv2.VideoWriter_fourcc(*'avc1')
-        out = cv2.VideoWriter(local_output_path, fourcc, 10, (width, height))
-
-        frame_count = 0
-        length = 10
-        all_frames = []
-        xy_list_list = []
-        frame_scores = []
-
-        while cap.isOpened():
-            ret, frame = cap.read()
-            if not ret:
-                break
-
-            if frame_count % frame_interval == 0:
-                all_frames.append(frame)
-                # YOLO를 사용하여 사람만 탐지
-                results_yolo = yolo_model.predict(frame, conf=0.5)
-                people_boxes = [box for box in results_yolo[0].boxes if int(
-                    box.cls[0]) == 0]  # 사람만 선택
-
-                if people_boxes:
-                    # 신뢰도가 가장 높은 바운딩 박스 선택
-                    best_box = max(people_boxes, key=lambda box: box.conf[0])
-                    x1, y1, x2, y2 = map(int, best_box.xyxy[0])
-                    cv2.rectangle(frame, (x1, y1), (x2, y2),
-                                  (0, 255, 0), 2)  # 바운딩 박스 그리기
-
-                    # 바운딩 박스 내에서 포즈 추출
-                    roi = frame[y1:y2, x1:x2]
-                    image_rgb = cv2.cvtColor(roi, cv2.COLOR_BGR2RGB)
-                    results = pose.process(image_rgb)
-
-                    if results.pose_landmarks:
-                        pose_landmarks = results.pose_landmarks.landmark
-                        xy_list = [
-                            [lm.x, lm.y, lm.z] for idx, lm in enumerate(pose_landmarks)
-                            if idx not in excluded_landmarks
-                        ]
-                        xy_list = np.array(xy_list).flatten()
-                        xy_list_list.append(xy_list)
-
-                        # 랜드마크 그리기
-                        for idx, lm in enumerate(pose_landmarks):
-                            if idx not in excluded_landmarks:
-                                cx = int(lm.x * (x2 - x1) + x1)
-                                cy = int(lm.y * (y2 - y1) + y1)
-                                cv2.circle(frame, (cx, cy), 5, (0, 255, 0), -1)
-
-                        # 연결선 그리기
-                        for connection in mp_pose.POSE_CONNECTIONS:
-                            if connection[0] not in excluded_landmarks and connection[1] not in excluded_landmarks:
-                                start_idx = connection[0]
-                                end_idx = connection[1]
-                                if pose_landmarks[start_idx].visibility > 0.5 and pose_landmarks[end_idx].visibility > 0.5:
-                                    start_point = (int(pose_landmarks[start_idx].x * (x2 - x1) + x1), int(
-                                        pose_landmarks[start_idx].y * (y2 - y1) + y1))
-                                    end_point = (int(pose_landmarks[end_idx].x * (x2 - x1) + x1), int(
-                                        pose_landmarks[end_idx].y * (y2 - y1) + y1))
-                                    cv2.line(frame, start_point,
-                                             end_point, (0, 255, 0), 2)
-
-                        if len(xy_list_list) >= length:
-                            input_data = np.array(
-                                xy_list_list[-length:]).reshape(1, length, -1)
-                            prediction = model.predict(input_data)
-                            score = prediction[0][1]
-                            frame_scores.append(score)
-
-            frame_count += 1
-
-        cap.release()
-        # 가장 높은 점수의 시퀀스를 기준으로 앞뒤 30프레임을 포함한 비디오 생성
-        if frame_scores:
-            max_score_index = np.argmax(frame_scores)
-            max_score = frame_scores[max_score_index]
-            start_index = max(max_score_index - 30, 0)
-            end_index = min(max_score_index + 30 + 10, len(all_frames) - 1)
-
-            label = 'Theft' if max_score > 0.5 else 'Normal'
-            color = (0, 0, 255) if max_score > 0.5 else (0, 255, 0)
-            font_scale = 2  # 텍스트 크기 증가
-
-            for i in range(start_index, end_index + 1):
-                cv2.putText(all_frames[i], f'Probability: {max_score * 100:.1f}%', (
-                    10, 80), cv2.FONT_HERSHEY_SIMPLEX, font_scale, color, 3, cv2.LINE_AA)
-                out.write(all_frames[i])
-
-        out.release()
-
-        # 이상 행동 감지 여부
-        abnormal_behavior_detected = max_score > 0.80
-        print(
-            f's3_output_name: {s3_output_name}, \n local_input_path: {local_output_path}')
-        upload_file_to_s3_2(local_output_path,
-                            settings.AWS_STORAGE_BUCKET_NAME, s3_output_name)
+        X, frames = extract_features(pose_data)
     except Exception as e:
-        print(f"Error processing video: {e}")
-        abnormal_behavior_detected = False
-    finally:
-        os.remove(local_input_path)
-        os.remove(local_output_path)
+        print(f"Error in extracting features: {e}")
+        return s3_output_name, False
+
+    # 시퀀스 생성
+    sequence_length = 10
+    X_seq, sequence_frames = create_sequences(X, frames, sequence_length)
+
+    # 예측
+    if len(X_seq) == 0:
+        return s3_output_name, False
+
+    predictions = model.predict(X_seq)
+
+    # 비디오 생성
+    max_score_index = np.argmax(predictions[:, 1])
+    max_score = predictions[max_score_index, 1]
+    start_index = max(max_score_index - 30, 0)
+    end_index = min(max_score_index + 30 +
+                    sequence_length, len(all_frames) - 1)
+
+    label = 'Theft' if max_score > 0.5 else 'Normal'
+    color = (0, 0, 255) if max_score > 0.5 else (0, 255, 0)
+    font_scale = 2  # 텍스트 크기 증가
+
+    for i in range(start_index, end_index + 1):
+        frame_name, frame = all_frames[i]
+        out.write(frame)
+
+    out.release()
+
+    # 이상 행동 감지 여부
+    abnormal_behavior_detected = max_score > 0.80
+    print(
+        f's3_output_name: {s3_output_name}, \n local_input_path: {local_output_path}')
+    upload_file_to_s3_2(local_output_path,
+                        settings.AWS_STORAGE_BUCKET_NAME, s3_output_name)
+
+    os.remove(local_input_path)
+    os.remove(local_output_path)
 
     return abnormal_behavior_detected
