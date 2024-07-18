@@ -45,7 +45,7 @@ jobs:
           git pull origin main &&
           source /home/ubuntu/big-project/bin/activate &&
           sudo apt-get update &&
-          sudo apt-get install -y libgl1-mesa-glx &&
+          sudo apt-get install -y libgl1 libglib2.0-0 libsm6 libxext6 libxrender-dev &&
           pip install -r requirements.txt &&
           python manage.py migrate --noinput &&
           python manage.py collectstatic --noinput &&
