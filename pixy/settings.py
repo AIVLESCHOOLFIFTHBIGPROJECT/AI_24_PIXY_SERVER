@@ -1,11 +1,14 @@
+from datetime import timedelta
 from pathlib import Path
 import environ
-import sys, os, json
+import sys
+import os
+import json
 import pymysql
 
 # environ 설정
 env = environ.Env(
-    DEBUG = (bool, False)
+    DEBUG=(bool, False)
 )
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -31,7 +34,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     'django.contrib.sites',
-    
+
     'accounts',
     'notice',
     'post',
@@ -53,6 +56,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.naver',
     'notifications',
     'corsheaders',
+    'theft_detecion',
 ]
 
 MIDDLEWARE = [
@@ -174,7 +178,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # 추가
-AUTH_USER_MODEL = 'accounts.User' # 커스텀 유저를 장고에서 사용하기 위함
+AUTH_USER_MODEL = 'accounts.User'  # 커스텀 유저를 장고에서 사용하기 위함
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',  # 인증된 요청인지 확인
@@ -190,7 +194,6 @@ REST_FRAMEWORK = {
 
 REST_USE_JWT = True
 
-from datetime import timedelta
 SIMPLE_JWT = {
     'SIGNING_KEY': env('SECRET_KEY'),
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
@@ -205,19 +208,19 @@ SIMPLE_JWT = {
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # 비밀번호 재설정(이메일 수신 : 발신(google))
-EMAIL_BACKEND=env('EMAIL_BACKEND')
-EMAIL_PORT=env('EMAIL_PORT')
-EMAIL_HOST=env('EMAIL_HOST')
-EMAIL_HOST_USER=env('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD=env('EMAIL_HOST_PASSWORD')
-EMAIL_USE_TLS=True
-DEFAULT_FROM_EMAIL=EMAIL_HOST_USER
+EMAIL_BACKEND = env('EMAIL_BACKEND')
+EMAIL_PORT = env('EMAIL_PORT')
+EMAIL_HOST = env('EMAIL_HOST')
+EMAIL_HOST_USER = env('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
+EMAIL_USE_TLS = True
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # 소셜 로그인
 # 사이트는 1개만 사용할 것이라고 명시
 SITE_ID = 1
 
-ACCOUNT_USER_MODEL_USERNAME_FIELD = None # username 필드 사용 x
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None  # username 필드 사용 x
 ACCOUNT_EMAIL_REQUIRED = True            # email 필드 사용 o
 ACCOUNT_USERNAME_REQUIRED = False        # username 필드 사용 x
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
@@ -226,11 +229,11 @@ SOCIAL_AUTH_GOOGLE_SECRET = env('SOCIAL_AUTH_GOOGLE_SECRET')
 STATE = env('STATE')
 
 # S3 Storages
-# AWS_ACCESS_KEY_ID = env('AWS_ACCESS_KEY_ID')
-# AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY')
-# AWS_REGION = env('AWS_REGION')
+AWS_ACCESS_KEY_ID = env('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY')
+AWS_REGION = env('AWS_REGION')
 
-# AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME')
-# AWS_S3_CUSTOM_DOMAIN = '%s.s3.%s.amazonaws.com' % (AWS_STORAGE_BUCKET_NAME, AWS_REGION)
-# DEFAULT_FILE_STORAGE = env('DEFAULT_FILE_STORAGE')
-# MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
+AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME')
+AWS_S3_CUSTOM_DOMAIN = '%s.s3.%s.amazonaws.com' % (
+    AWS_STORAGE_BUCKET_NAME, env('AWS_REGION'))
+MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
