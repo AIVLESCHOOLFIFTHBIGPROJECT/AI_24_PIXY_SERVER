@@ -29,6 +29,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install opencv-python
+        pip install mediapipe
     - name: Run Tests
       env:
         SECRET_KEY: ${{ secrets.SECRET_KEY }}
