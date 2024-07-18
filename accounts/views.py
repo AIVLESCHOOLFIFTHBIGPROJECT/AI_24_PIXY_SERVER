@@ -233,6 +233,7 @@ def logout(request):
         response.delete_cookie('refresh_token')
         # refresh토큰 blacklist에 추가
         refresh_token = request.data.get("refresh_token")
+        # print(refresh_token)
         token = RefreshToken(refresh_token)
         token.blacklist()
         return response
@@ -367,7 +368,7 @@ def delete_user(request):
         user.delete()
         # 탈퇴시 클라이언트 쿠키 삭제
         response = HttpResponse("성공적으로 탈퇴되었습니다!!")
-        response.delete_cookie('access_token')
+        # response.delete_cookie('access_token')
         response.delete_cookie('refresh_token')
         
         return response
@@ -435,17 +436,50 @@ def duplicate_phonenumber(request):
     data = {'message' : '이미 있는 휴대폰 번호입니다.'}
     return Response(data, status=status.HTTP_400_BAD_REQUEST)
 
-# 이메일 인증코드 보내기
+# 이메일 인증코드 보내기(비회원일때)
 @swagger_auto_schema(
     method='post',
     tags=['User'],
-    operation_summary="이메일 인증",
+    operation_summary="이메일 인증(비회원)",
     operation_description="이메일 인증 보내기 (누구나 가능)",
     request_body=EmailVerificationSerializer,
     responses={200: openapi.Response(description="Verification code sent"), 404: 'Not Found'}
 )
 
-# 이메일 인증코드 보내기
+# 이메일 인증코드 보내기(비회원일때)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def non_user_sendcode(request):
+    serializer = EmailVerificationSerializer(data=request.data)
+    if serializer.is_valid():
+        email = serializer.validated_data['email']
+        user = User.objects.filter(email=email).first()
+        if not user:
+            code = str(uuid.uuid4())
+            # 5분 동안 유효
+            cache.set(f'verification_code_{email}', code, timeout=300)
+            message = '인증 코드는 {code}'.format(code=code)
+            send_mail(
+                'Your verification code',
+                message,
+                email,
+                [email],
+                fail_silently=False,
+            )
+            return Response({'message': 'Verification code sent.'}, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# 이메일 인증코드 보내기(회원일때)
+@swagger_auto_schema(
+    method='post',
+    tags=['User'],
+    operation_summary="이메일 인증(회원)",
+    operation_description="이메일 인증 보내기 (누구나 가능)",
+    request_body=EmailVerificationSerializer,
+    responses={200: openapi.Response(description="Verification code sent"), 404: 'Not Found'}
+)
+
+# 이메일 인증코드 보내기(회원일때)
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def send_verification_code(request):
