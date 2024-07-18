@@ -44,6 +44,8 @@ jobs:
           cd /home/ubuntu/deploy/AI_24_PIXY_SERVER &&
           git pull origin main &&
           source /home/ubuntu/big-project/bin/activate &&
+          sudo apt-get update &&
+          sudo apt-get install -y libgl1-mesa-glx &&
           pip install -r requirements.txt &&
           python manage.py migrate --noinput &&
           python manage.py collectstatic --noinput &&
