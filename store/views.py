@@ -106,6 +106,12 @@ def StoreDetail(request,pk):
         store.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+
+# 특정 이미지파일만 받기
+WHITE_LIST_EXT = [
+    '.csv'
+]
+
 #StoreUpload
 @swagger_auto_schema(
     method='get',
@@ -139,6 +145,11 @@ def StoreUploadList(request):
         
         serializer = StoreUploadSerializer(data=request.data)
         if serializer.is_valid():
+            uploaded_file = request.FILES['uploaded_file']
+            ext = os.path.splitext(uploaded_file.name)[1]
+            if ext not in WHITE_LIST_EXT:
+                return Response({'error': f'Invalid file extension: {ext}. Allowed extensions are: {WHITE_LIST_EXT}'}, status=status.HTTP_400_BAD_REQUEST)
+            
             store_upload = serializer.save(
                 s_num=store,
                 m_num=request.user
@@ -171,7 +182,6 @@ def StoreUploadList(request):
                 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
     
 # store upload detail
 @swagger_auto_schema(
@@ -239,11 +249,11 @@ def StoreUploadDetail(request, pk):
 @permission_classes([AllowAny])
 @parser_classes([MultiPartParser, FormParser])
 def PredictUploadList(request):
-    if request.method=='GET':
+    if request.method == 'GET':
         predict = PredictUpload.objects.all()
         serializer = PredictUploadSerializer(predict, many=True)
         return Response(serializer.data)
-    elif request.method=='POST':
+    elif request.method == 'POST':
         try:
             # 현재 로그인된 사용자의 Store 정보 가져오기
             store = Store.objects.get(m_num=request.user)
@@ -252,6 +262,11 @@ def PredictUploadList(request):
         
         serializer = PredictUploadSerializer(data=request.data)
         if serializer.is_valid():
+            uploaded_file = request.FILES['uploaded_file']
+            ext = os.path.splitext(uploaded_file.name)[1]
+            if ext not in WHITE_LIST_EXT:
+                return Response({'error': f'Invalid file extension: {ext}. Allowed extensions are: {WHITE_LIST_EXT}'}, status=status.HTTP_400_BAD_REQUEST)
+            
             predict_upload = serializer.save(
                 s_num=store,
                 m_num=request.user
@@ -270,15 +285,14 @@ def PredictUploadList(request):
                 df = pd.read_csv(StringIO(csv_string))
                 
                 df.drop(columns='Unnamed: 0', axis=1, inplace=True)
-                df2=pd.get_dummies(df, columns=['category'])
-                df2=df2.set_index('date')
+                df2 = pd.get_dummies(df, columns=['category'])
+                df2 = df2.set_index('date')
 
-                    # 모델 파일 S3에서 읽기
-                model_s3_key ='model/saved_model.pickle'  # 모델 파일의 S3 경로 설정
+                # 모델 파일 S3에서 읽기
+                model_s3_key = 'model/saved_model.pickle'  # 모델 파일의 S3 경로 설정
                 model_obj = s3_client.get_object(Bucket=bucket_name, Key=model_s3_key)
                 model_body = model_obj['Body']
                 model = pickle.load(model_body)
-
 
                 # 예측 
                 df['predicted_sales'] = model.predict(df2)
