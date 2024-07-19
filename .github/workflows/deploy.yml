@@ -39,18 +39,39 @@ jobs:
         USER: ${{ secrets.EC2_USER }}
       run: |
         echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-        ls -l  # Debug: 현재 디렉토리 파일 목록 확인
-        ssh -o StrictHostKeyChecking=no -i private_key ${USER}@${HOST} '
+        ssh -v -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 -o ConnectionAttempts=5 -i private_key ${USER}@${HOST} '
           cd /home/ubuntu/deploy/AI_24_PIXY_SERVER &&
           git pull origin main &&
           source /home/ubuntu/big-project/bin/activate &&
+          
+          echo "Updating package lists..." &&
           sudo apt-get update &&
-          sudo apt-get install -y libgl1 libglib2.0-0 libsm6 libxext6 libxrender-dev &&
+          
+          echo "Checking server resources..." &&
+          df -h &&
+          free -m &&
+          
+          echo "Installing packages individually..." &&
+          sudo apt-get install -y libgl1 && echo "libgl1 installed" &&
+          sudo apt-get install -y libglib2.0-0 && echo "libglib2.0-0 installed" &&
+          sudo apt-get install -y libsm6 && echo "libsm6 installed" &&
+          sudo apt-get install -y libxext6 && echo "libxext6 installed" &&
+          sudo apt-get install -y libxrender-dev && echo "libxrender-dev installed" &&
+          
+          echo "Installing Python requirements..." &&
           pip install -r requirements.txt &&
+          
+          echo "Running database migrations..." &&
           python manage.py migrate --noinput &&
+          
+          echo "Collecting static files..." &&
           python manage.py collectstatic --noinput &&
+          
+          echo "Restarting services..." &&
           sudo systemctl restart gunicorn &&
-          sudo systemctl restart nginx
+          sudo systemctl restart nginx &&
+          
+          echo "Deployment completed successfully"
         '
 
     - name: Health check
