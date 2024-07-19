@@ -5,7 +5,7 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import pandas as pd
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI  # Updated import
+from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_community.vectorstores import Chroma
 from langchain.schema import Document
 from langchain.chains import RetrievalQA
@@ -66,7 +66,7 @@ def start_learning(request):
         database.add_documents(documents)
         database.persist()
 
-        return JsonResponse({'message': 'Learning process started successfully'})
+        return JsonResponse({'message': 'Learning process success'})
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
 @csrf_exempt
@@ -84,8 +84,12 @@ def process_text(request):
         retriever = database.as_retriever(search_kwargs={"k": 3})
         qa = RetrievalQA.from_llm(llm=chat, retriever=retriever, return_source_documents=True)
 
+        # Set the initial prompt to ensure responses in Korean
+        initial_prompt = "모든 대답은 한국어로 해주세요."
+        full_query = f"{initial_prompt}\n{text}"
+
         # Get the response
-        result = qa(text)
+        result = qa(full_query)
 
         # Return the response
         return JsonResponse({'response': result["result"]})
