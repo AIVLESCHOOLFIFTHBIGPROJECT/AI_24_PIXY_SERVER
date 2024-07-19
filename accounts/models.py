@@ -4,6 +4,7 @@ import os
 from uuid import uuid4
 from django.utils import timezone
 
+
 class UserManager(BaseUserManager):
     def create_user(self, email, name, password=None):
         user = self.model(
@@ -55,7 +56,6 @@ class User(AbstractBaseUser):
     is_agreement1 = models.BooleanField(default=False)
     is_agreement2 = models.BooleanField(default=False)
     is_agreement3 = models.BooleanField(default=False, null=True)
-    
     objects = UserManager()
 
     USERNAME_FIELD = 'email'

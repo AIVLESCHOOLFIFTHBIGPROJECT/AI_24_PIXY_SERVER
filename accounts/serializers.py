@@ -20,9 +20,9 @@ class EmailVerificationSerializer(serializers.Serializer):
 
 class VerifyCodeSerializer(serializers.Serializer):
     email = serializers.EmailField()
-    code = serializers.UUIDField()
+    code = serializers.CharField(max_length=6)
 
 class ResetPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField()
-    code = serializers.UUIDField()
+    code = serializers.CharField(max_length=6)
     new_password = serializers.CharField(write_only=True)
