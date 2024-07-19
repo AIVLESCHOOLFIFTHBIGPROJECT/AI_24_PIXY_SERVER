@@ -166,7 +166,7 @@ from drf_yasg import openapi
 def QnaList(request):
     # Read
     if request.method == 'GET':
-        qna = Qna.objects.filter(m_num=request.id)
+        qna = Qna.objects.filter(m_num=request.user)
         serializer = QnaSerializer(qna, many=True)
         return Response(serializer.data)
 
