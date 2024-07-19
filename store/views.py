@@ -287,13 +287,25 @@ def PredictUploadList(request):
                 m_num=request.user
             )
 
-            # CSV 파일 S3에서 읽기
-            file_url = predict_upload.uploaded_file.url
-            s3_client = boto3.client('s3')
-            bucket_name = settings.AWS_STORAGE_BUCKET_NAME
-            s3_key = file_url.split(f'https://{settings.AWS_S3_CUSTOM_DOMAIN}/')[1]
-
+            # 크로스 계정 S3 접근을 위한 설정
+            sts_client = boto3.client('sts')
             try:
+                assumed_role_object = sts_client.assume_role(
+                    RoleArn="arn:aws:iam::000557732562:role/cross",
+                    RoleSessionName="AssumeRoleSession"
+                )
+                
+                s3_client = boto3.client(
+                    's3',
+                    aws_access_key_id=assumed_role_object['Credentials']['AccessKeyId'],
+                    aws_secret_access_key=assumed_role_object['Credentials']['SecretAccessKey'],
+                    aws_session_token=assumed_role_object['Credentials']['SessionToken']
+                )
+
+                file_url = predict_upload.uploaded_file.url
+                bucket_name = settings.AWS_STORAGE_BUCKET_NAME
+                s3_key = file_url.split(f'https://{settings.AWS_S3_CUSTOM_DOMAIN}/')[1]
+
                 csv_obj = s3_client.get_object(Bucket=bucket_name, Key=s3_key)
                 body = csv_obj['Body']
                 csv_string = body.read().decode('utf-8')
@@ -324,8 +336,10 @@ def PredictUploadList(request):
                         stock=row['stock'],
                     )
 
+            except ClientError as e:
+                return Response({'error': f"S3 access error: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
             except Exception as e:
-                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': f"Unexpected error: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
             
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
