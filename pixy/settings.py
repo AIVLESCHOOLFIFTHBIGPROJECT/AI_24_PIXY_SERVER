@@ -232,6 +232,8 @@ AWS_KEY = env('AWS_KEY')
 AWS_SECRET = env('AWS_SECRET')
 AWS_REGION = env('AWS_REGION')
 BUCKET_NAME = env('AWS_BUCKET_NAME')
-# AWS_DOMAIN = '%s.s3.%s.amazonaws.com' % (BUCKET_NAME, env('AWS_REGION'))
-AWS_DOMAIN = f'{BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com'
+AWS_DOMAIN = '%s.s3.%s.amazonaws.com' % (
+    BUCKET_NAME, AWS_REGION)
+# AWS_DOMAIN = f'{BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com'
+# DEFAULT_FILE_STORAGE = env('DEFAULT_FILE_STORAGE')
 MEDIA_URL = f'https://{AWS_DOMAIN}/media/'
