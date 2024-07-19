@@ -66,7 +66,6 @@ class CustomLSTM(tf.keras.layers.LSTM):
 
 
 # LSTM 모델 로드
-# model_path = '/home/ubuntu/deploy/AI_24_PIXY_SERVER/theft_detecion/theft_detection_lstm_model.h5'
 # 현재 파일의 디렉토리를 기준으로 상대 경로 설정
 current_dir = os.path.dirname(os.path.abspath(__file__))
 model_path = os.path.join(current_dir, 'theft_detection_lstm_model.h5')
@@ -89,23 +88,6 @@ def download_file_from_s3(bucket_name, s3_url, local_path):
         raise
 
 
-def upload_file_to_s3(file_obj, bucket_name, s3_key):
-    try:
-        s3_client.upload_fileobj(file_obj, bucket_name, s3_key, ExtraArgs={
-            'ContentType': 'video/mp4',
-            'CacheControl': 'max-age=86400'
-        })
-        print(f's3_key: {s3_key}, bucket_name: {bucket_name}')
-        logger.info(f"Successfully uploaded {s3_key} to {bucket_name}")
-        # 파일의 URL을 반환
-        s3_url = f"https://{bucket_name}.s3.{settings.AWS_REGION}.amazonaws.com/{s3_key}"
-        logger.info(f"Uploaded file URL: {s3_url}")  # URL을 로그에 출력
-        return s3_url
-    except Exception as e:
-        logger.error(f"Error uploading file to S3: {e}")
-        raise
-
-
 def upload_file_to_s3_2(file_path, bucket_name, s3_key):
     try:
         with open(file_path, 'rb') as file_obj:
@@ -113,11 +95,9 @@ def upload_file_to_s3_2(file_path, bucket_name, s3_key):
                 'ContentType': 'video/mp4',
                 'CacheControl': 'max-age=86400'
             })
-        print(f's3_key: {s3_key}, bucket_name: {bucket_name}')
         logger.info(f"Successfully uploaded {s3_key} to {bucket_name}")
         # 파일의 URL을 반환
         s3_url = f"https://{bucket_name}.s3.{settings.AWS_REGION}.amazonaws.com/{s3_key}"
-        print(f"Uploaded file URL: {s3_url}")  # URL을 로그에 출력
         return s3_url
     except Exception as e:
         logger.error(f"Error uploading file to S3: {e}")
