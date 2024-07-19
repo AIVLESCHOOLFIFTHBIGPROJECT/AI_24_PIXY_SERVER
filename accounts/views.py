@@ -26,7 +26,7 @@ from rest_framework import status
 from .models import EmailVerificationCode
 from .serializers import EmailVerificationSerializer, VerifyCodeSerializer, ResetPasswordSerializer
 from django.core.cache import cache
-import json, os
+import json, os, random
 from store.models import Store
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
@@ -365,10 +365,6 @@ def delete_user(request):
         # 이미지 파일 삭제
         if user.business_r:
             user.business_r.delete(save=False)
-        # 매장 삭제
-        store = Store.objects.get(m_num=user)  # user의 기본키로 Store 객체 조회
-        store.delete()
-        # 사용자 탈퇴 로직 (예: 사용자 데이터 삭제)
         user.delete()
         # 탈퇴시 클라이언트 쿠키 삭제
         response = HttpResponse("성공적으로 탈퇴되었습니다!!")
@@ -457,19 +453,21 @@ def non_user_sendcode(request):
     if serializer.is_valid():
         email = serializer.validated_data['email']
         user = User.objects.filter(email=email).first()
-        if not user:
-            code = str(uuid.uuid4())
-            # 5분 동안 유효
-            cache.set(f'verification_code_{email}', code, timeout=300)
-            message = '인증 코드는 {code}'.format(code=code)
-            send_mail(
-                'Your verification code',
-                message,
-                email,
-                [email],
-                fail_silently=False,
-            )
-            return Response({'message': 'Verification code sent.'}, status=status.HTTP_200_OK)
+        if user:
+            return Response({'detail': 'Email already exists', 'code': 'email_exists'}, status=status.HTTP_400_BAD_REQUEST)
+        # 6자리 숫자 코드 생성
+        code = str(random.randint(100000, 999999))
+        # 5분 동안 유효
+        cache.set(f'verification_code_{email}', code, timeout=300)
+        message = f'인증 코드는 {code}'
+        send_mail(
+            'Your verification code',
+            message,
+            email,
+            [email],
+            fail_silently=False,
+        )
+        return Response({'message': 'Verification code sent.'}, status=status.HTTP_200_OK)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # 이메일 인증코드 보내기(회원일때)
@@ -491,10 +489,11 @@ def send_verification_code(request):
         email = serializer.validated_data['email']
         user = User.objects.filter(email=email).first()
         if user:
-            code = str(uuid.uuid4())
+            # 6자리 숫자 코드 생성
+            code = str(random.randint(100000, 999999))
             # 5분 동안 유효
             cache.set(f'verification_code_{email}', code, timeout=300)
-            message = '인증 코드는 {code}'.format(code=code)
+            message = f'인증 코드는 {code}'
             send_mail(
                 'Your verification code',
                 message,
