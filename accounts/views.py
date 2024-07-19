@@ -59,7 +59,6 @@ WHITE_LIST_EXT = [
         openapi.Parameter('p_num', openapi.IN_FORM, type=openapi.TYPE_STRING, description="Phone number", required=True),
         openapi.Parameter('r_num', openapi.IN_FORM, type=openapi.TYPE_STRING, description="Registration number", required=True),
         openapi.Parameter('password', openapi.IN_FORM, type=openapi.TYPE_STRING, description="Password", required=True),
-        openapi.Parameter('access_code', openapi.IN_FORM, type=openapi.TYPE_STRING, description="access_code", required=True),
         openapi.Parameter('is_agreement1', openapi.IN_FORM, type=openapi.TYPE_BOOLEAN, description="Agreement 1", required=True),
         openapi.Parameter('is_agreement2', openapi.IN_FORM, type=openapi.TYPE_BOOLEAN, description="Agreement 2", required=True),
         openapi.Parameter('is_agreement3', openapi.IN_FORM, type=openapi.TYPE_BOOLEAN, description="Agreement 3", required=True),
