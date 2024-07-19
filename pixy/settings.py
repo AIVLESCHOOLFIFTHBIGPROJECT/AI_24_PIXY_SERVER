@@ -6,6 +6,12 @@ import os
 import json
 import pymysql
 
+# Load environment variables from .env file (api key for example)
+import os
+from dotenv import load_dotenv
+
+load_dotenv() 
+
 # environ 설정
 env = environ.Env(
     DEBUG=(bool, False)

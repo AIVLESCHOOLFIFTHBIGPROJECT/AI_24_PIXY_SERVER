@@ -41,6 +41,7 @@ urlpatterns = [
     path('api/store/', include('store.urls')),
     path('api/notifications/', include('notifications.urls')),
     path('api/theft_detection/', include('theft_detecion.urls')),
+    path('api/llm_model/', include('llm_model.urls')),
 
     # Swagger UI
     re_path(r'^swagger(?P<format>\.json|\.yaml)$',
