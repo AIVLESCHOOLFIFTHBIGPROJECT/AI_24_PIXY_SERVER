@@ -10,7 +10,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from rest_framework.parsers import MultiPartParser, FormParser
 from .models import Video
-from .serializers import VideoDetailSerializer, VideoListSerializer, VideoCreateSerializer
+from .serializers import FireVideoDetailSerializer, FireVideoListSerializer, FireVideoCreateSerializer
 from .detect_fire import detect_fire, upload_file_to_s3
 from django.conf import settings
 import logging
@@ -93,14 +93,14 @@ def video_list(request):
     tags=['fire_detection'],
     operation_summary="Upload a new video",
     operation_description="Upload a new video and process it",
-    request_body=VideoCreateSerializer,
-    responses={201: VideoCreateSerializer, 400: 'Bad Request'}
+    request_body=FireVideoCreateSerializer,
+    responses={201: FireVideoCreateSerializer, 400: 'Bad Request'}
 )
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @parser_classes([MultiPartParser, FormParser])
 def upload_video(request):
-    serializer = VideoCreateSerializer(data=request.data)
+    serializer = FireVideoCreateSerializer(data=request.data)
     if serializer.is_valid():
         print("Form is valid. Preparing to save video instance.")
         video_instance = serializer.save()
@@ -121,7 +121,7 @@ def upload_video(request):
             video_instance.save()
 
             if process_and_save_video(video_instance):
-                return Response(VideoCreateSerializer(video_instance).data, status=status.HTTP_201_CREATED)
+                return Response(FireVideoCreateSerializer(video_instance).data, status=status.HTTP_201_CREATED)
             else:
                 return Response({"error": "An error occurred while processing the video."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -138,12 +138,12 @@ def upload_video(request):
     tags=['fire_detection'],
     operation_summary="Retrieve video details",
     operation_description="Get details of a specific video entry",
-    responses={200: VideoDetailSerializer, 404: 'Not Found'}
+    responses={200: FireVideoDetailSerializer, 404: 'Not Found'}
 )
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def video_detail(request, pk):
     video = get_object_or_404(Video, pk=pk)
-    serializer = VideoDetailSerializer(video)
+    serializer = FireVideoDetailSerializer(video)
     return Response(serializer.data, status=status.HTTP_200_OK)
     # return render(request, 'video_processor/video_detail.html', {'video': video, 'transformed_video_url': video.processed_video.url})

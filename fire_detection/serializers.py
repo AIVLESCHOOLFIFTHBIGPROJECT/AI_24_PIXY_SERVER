@@ -2,20 +2,20 @@ from rest_framework import serializers
 from .models import Video
 
 
-class VideoCreateSerializer(serializers.ModelSerializer):
+class FireVideoCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Video
         fields = '__all__'
 
 
-class VideoDetailSerializer(serializers.ModelSerializer):
+class FireVideoDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Video
         fields = ['processed_video', 'fire_detected',
                   'store_id', 'upload_time']
 
 
-class VideoListSerializer(serializers.ModelSerializer):
+class FireVideoListSerializer(serializers.ModelSerializer):
     processed_video = serializers.SerializerMethodField()
 
     class Meta:

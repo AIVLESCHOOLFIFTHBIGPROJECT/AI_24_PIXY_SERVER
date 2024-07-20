@@ -8,6 +8,20 @@ from urllib.parse import urlparse
 import tempfile
 from venv import logger
 
+# sts_client = boto3.client('sts')
+# assumed_role_object = sts_client.assume_role(
+#     RoleArn="arn:aws:iam::000557732562:role/cross",
+#     RoleSessionName="AssumeRoleSession"
+# )
+
+# s3 = boto3.client(
+#     's3',
+#     aws_access_key_id=assumed_role_object['Credentials']['AccessKeyId'],
+#     aws_secret_access_key=assumed_role_object['Credentials']['SecretAccessKey'],
+#     aws_session_token=assumed_role_object['Credentials']['SessionToken']
+# )
+
+
 # S3 연결하기
 s3 = boto3.client(
     's3',
