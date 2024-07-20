@@ -48,6 +48,7 @@ def process_and_save_video(video_instance):
 
         video_instance.processed_video.name = s3_output_name
         video_instance.abnormal_behavior_detected = abnormal_behavior_detected
+        video_instance.upload_time = upload_time
         video_instance.save()
 
         print(
