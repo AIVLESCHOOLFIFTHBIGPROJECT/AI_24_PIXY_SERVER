@@ -10,7 +10,8 @@ urlpatterns = [
     # path('logout_all/normal/', views.logout_all, name='logout_all'),
     path('profile/normal/', views.profile, name='profile'),
     path('delete_user/normal/', views.delete_user, name='delete_user'),
-    # path('find_userid/normal/', views.find_userid, name='find_userid'),
+    path('duplicate_userid/normal/', views.duplicate_userid, name='duplicate_userid'),
+    path('duplicate_phonenumber/normal/', views.duplicate_phonenumber, name='duplicate_phonenumber'),
     # 토큰 재발급
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     # 구글 소셜 로그인
@@ -22,7 +23,8 @@ urlpatterns = [
     path('naver/callback/', views.naver_callback, name='naver_callback'),
     path('naver/login/finish/', views.NaverLogin.as_view(), name='naver_login_todjango'),
     # 이메일 인증(비밀번호 찾기)
-    path('send-code/', views.send_verification_code, name='send_code'),
+    path('send-code/user/', views.send_verification_code, name='send_code_user'),
+    path('send-code/nonuser/', views.non_user_sendcode, name='send_code_nonuser'),
     path('verify-code/', views.verify_code, name='verify_code'),
     path('reset-password/', views.reset_password, name='reset_password'),
 ]

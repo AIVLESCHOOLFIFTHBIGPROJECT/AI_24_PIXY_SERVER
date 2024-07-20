@@ -17,6 +17,7 @@ from django.contrib.auth.models import update_last_login
 from django.contrib.auth import get_user_model
 
 from accounts.serializers import UserSerializer, UserInfoSerializer
+from store.serializers import StoreSerializer
 from pathlib import Path
 from django.http import HttpResponse
 from django.contrib.auth.models import User
@@ -25,7 +26,8 @@ from rest_framework import status
 from .models import EmailVerificationCode
 from .serializers import EmailVerificationSerializer, VerifyCodeSerializer, ResetPasswordSerializer
 from django.core.cache import cache
-import json, os
+import json, os, random
+from store.models import Store
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
@@ -60,6 +62,7 @@ WHITE_LIST_EXT = [
         openapi.Parameter('is_agreement1', openapi.IN_FORM, type=openapi.TYPE_BOOLEAN, description="Agreement 1", required=True),
         openapi.Parameter('is_agreement2', openapi.IN_FORM, type=openapi.TYPE_BOOLEAN, description="Agreement 2", required=True),
         openapi.Parameter('is_agreement3', openapi.IN_FORM, type=openapi.TYPE_BOOLEAN, description="Agreement 3", required=True),
+        openapi.Parameter('store_name', openapi.IN_FORM, type=openapi.TYPE_STRING, description="store_name", required=True),
     ],
     consumes=['multipart/form-data'],
     responses={
@@ -81,7 +84,8 @@ WHITE_LIST_EXT = [
 @permission_classes([AllowAny])
 def signup(request):
     data = request.data.copy()
-
+    # store_name = request.data.get('store_name')
+    code = request.data.get('code')
     # 이미지 파일 가져오기
     uploaded_file = request.FILES.get('business_r')
     if uploaded_file:
@@ -96,6 +100,16 @@ def signup(request):
         user = serializer.save()
         user.set_password(data['password'])
         user.save()
+        # 회원의 기본키 가져오기
+        user_id = user.pk
+        # StoreSerializer 유효성 검사 및 저장
+        store_data = {
+            'name': request.data.get('store_name'),
+            'm_num': user_id
+        }
+        store_serializer = StoreSerializer(data=store_data)
+        if store_serializer.is_valid(raise_exception=True):
+            store_serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -120,7 +134,9 @@ def signup(request):
                 "application/json": {
                     "message": "로그인 성공!!",
                     "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzIwNzY4NjE1LCJpYXQiOjE3MjA3NjUwMTUsImp0aSI6IjgxNjkyMWQ0NGRlNjRmNjFhNzZmYzBjYjBjYThlOTRjIiwidXNlcl9pZCI6MTd9.VPEvTccSxvSc0knBo6ylc5Zfj9IyFLusVuvflHwDwL4",
-                    "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTcyMTM2OTgxNSwiaWF0IjoxNzIwNzY1MDE1LCJqdGkiOiIwN2ZlZWQ0MjMyYzQ0MWVhODUxMGFhZGQyODU1MjA3OCIsInVzZXJfaWQiOjE3fQ.3-qI0TgHNiWda-rW4VCdoiGPwaAzKcvzlWdQTqD7o3k"
+                    "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTcyMTM2OTgxNSwiaWF0IjoxNzIwNzY1MDE1LCJqdGkiOiIwN2ZlZWQ0MjMyYzQ0MWVhODUxMGFhZGQyODU1MjA3OCIsInVzZXJfaWQiOjE3fQ.3-qI0TgHNiWda-rW4VCdoiGPwaAzKcvzlWdQTqD7o3k",
+                    'user_id': 'user.pk',
+                    'name': 'user.name'
                 }
             }
         ),
@@ -150,20 +166,22 @@ def login(request):
     response = Response({
         'message': '로그인 성공!!',
         'access_token': str(refresh.access_token),
-        'refresh_token': str(refresh)
+        'refresh_token': str(refresh),
+        'user_id': user.pk,  # 로그인한 회원의 pk
+        'name': user.name
     })
     # 쿠키 저장(refresh token, access token)
-    response.set_cookie(
-        key='access_token',
-        value=str(refresh.access_token),
-        httponly=True,
-        secure=True,  # HTTPS를 사용할 경우 True로 설정
-        samesite='Lax'
-    )
+    # response.set_cookie(
+    #     key='access_token',
+    #     value=str(refresh.access_token),
+    #     httponly=True,
+    #     secure=True,  # HTTPS를 사용할 경우 True로 설정
+    #     samesite='Lax'
+    # )
     response.set_cookie(
         key='refresh_token',
         value=str(refresh),
-        httponly=True,
+        # httponly=True,
         secure=True,  # HTTPS를 사용할 경우 True로 설정
         samesite='Lax'
     )
@@ -210,10 +228,11 @@ def logout(request):
     try:
         # 쿠키 삭제
         response = HttpResponse("로그아웃 성공!!")
-        response.delete_cookie('access_token')
+        # response.delete_cookie('access_token')
         response.delete_cookie('refresh_token')
         # refresh토큰 blacklist에 추가
         refresh_token = request.data.get("refresh_token")
+        # print(refresh_token)
         token = RefreshToken(refresh_token)
         token.blacklist()
         return response
@@ -250,7 +269,7 @@ def logout(request):
     operation_summary="회원정보 수정",
     operation_description="회원정보 수정(로그인한 사람만 가능)",
     manual_parameters=[
-        openapi.Parameter('business_r', openapi.IN_FORM, type=openapi.TYPE_FILE, description="User image", required=True),
+        openapi.Parameter('business_r', openapi.IN_FORM, type=openapi.TYPE_FILE, description="User image", required=False),
         openapi.Parameter('name', openapi.IN_FORM, type=openapi.TYPE_STRING, description="User name", required=True),
         openapi.Parameter('p_num', openapi.IN_FORM, type=openapi.TYPE_STRING, description="Phone number", required=True),
         openapi.Parameter('r_num', openapi.IN_FORM, type=openapi.TYPE_STRING, description="Registration number", required=True),
@@ -284,9 +303,6 @@ def profile(request):
         old_image_path = request.user.business_r
         BASE_DIR = Path(__file__).resolve().parent.parent
         MEDIA_ROOT = os.path.join(BASE_DIR)
-        # 기존 이미지 삭제
-        if old_image_path and os.path.exists(MEDIA_ROOT+old_image_path.url):
-            os.remove(MEDIA_ROOT+old_image_path.url)
         # 이미지 파일 가져오기
         uploaded_file = request.FILES.get('business_r')
         if uploaded_file:
@@ -294,7 +310,10 @@ def profile(request):
             file_extension = os.path.splitext(uploaded_file.name)[1].lower()
             if file_extension not in WHITE_LIST_EXT:
                 return Response({"detail": "Only .jpg and .jpeg and .png files are allowed."}, status=status.HTTP_400_BAD_REQUEST)
-        data['business_r'] = uploaded_file
+            data['business_r'] = uploaded_file
+            # (업로드 파일이 있을 때만)기존 이미지 삭제
+            if old_image_path and os.path.exists(MEDIA_ROOT+old_image_path.url):
+                os.remove(MEDIA_ROOT+old_image_path.url)
         serializer = UserInfoSerializer(request.user, data=data, partial=True)
         if serializer.is_valid():
             # Update
@@ -343,42 +362,125 @@ def delete_user(request):
             if not BlacklistedToken.objects.filter(token=token).exists():
                 # 토큰을 블랙리스트에 추가
                 BlacklistedToken.objects.create(token=token)
-                
-        # 사용자 탈퇴 로직 (예: 사용자 데이터 삭제)
+        # 이미지 파일 삭제
+        if user.business_r:
+            user.business_r.delete(save=False)
         user.delete()
         # 탈퇴시 클라이언트 쿠키 삭제
         response = HttpResponse("성공적으로 탈퇴되었습니다!!")
-        response.delete_cookie('access_token')
+        # response.delete_cookie('access_token')
         response.delete_cookie('refresh_token')
-        
         return response
     
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    
-# 아이디(이메일) 찾기(보류)
-# @api_view(['POST'])
-# @permission_classes([AllowAny])
-# def find_userid(request):
-#     target_email = request.data.get('email')
-#     User = get_user_model()
-#     user = User.objects.filter(email=target_email)
-#     if not user.exists():
-#         return Response({'message': '해당 아이디는 존재하지 않습니다.'}, status=status.HTTP_400_BAD_REQUEST)
-#     data = {'email' : user.first().email}
-#     return Response(data, status=status.HTTP_200_OK)
 
-# 이메일 인증코드 보내기
+@swagger_auto_schema(
+    method='post',
+    operation_summary="이메일 중복확인",
+    operation_description="이메일 중복확인(누구나 가능)",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'email': openapi.Schema(type=openapi.TYPE_STRING, description='Email to check for duplication'),
+        },
+        required=['email']
+    ),
+    responses={
+        200: openapi.Response(description='Success', examples={'application/json': {'message': '해당 아이디는 사용가능 합니다.'}}),
+        400: openapi.Response(description='Email available', examples={'application/json': {'message': '해당 아이디는 사용가능합니다.'}})
+    },
+    tags=['User']
+)
+
+# 아이디(이메일) 중복검사
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def duplicate_userid(request):
+    target_email = request.data.get('email')
+    User = get_user_model()
+    user = User.objects.filter(email=target_email) 
+    if not user.exists():
+        return Response({'message': '해당 아이디는 사용 가능합니다.'}, status=status.HTTP_200_OK)
+    data = {'message' : '이미 있는 아이디입니다.'}
+    return Response(data, status=status.HTTP_400_BAD_REQUEST)
+
+@swagger_auto_schema(
+    method='post',
+    operation_summary="휴대폰 중복확인",
+    operation_description="휴대폰 중복확인(누구나 가능)",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'p_num': openapi.Schema(type=openapi.TYPE_STRING, description='phone to check for duplication'),
+        },
+        required=['p_num']
+    ),
+    responses={
+        200: openapi.Response(description='Success', examples={'application/json': {'message': '해당 휴대폰번호는 사용 가능합니다.'}}),
+        400: openapi.Response(description='Email available', examples={'application/json': {'message': '이미 있는 휴대폰번호입니다.'}})
+    },
+    tags=['User']
+)
+
+# 휴대폰번호 중복검사
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def duplicate_phonenumber(request):
+    target_num = request.data.get('p_num')
+    User = get_user_model()
+    user = User.objects.filter(p_num=target_num)
+    if not user.exists():
+        return Response({'message': '해당 휴대폰 번호는 사용 가능합니다.'}, status=status.HTTP_200_OK)
+    data = {'message' : '이미 있는 휴대폰 번호입니다.'}
+    return Response(data, status=status.HTTP_400_BAD_REQUEST)
+
+# 이메일 인증코드 보내기(비회원일때)
 @swagger_auto_schema(
     method='post',
     tags=['User'],
-    operation_summary="이메일 인증",
+    operation_summary="이메일 인증(비회원)",
     operation_description="이메일 인증 보내기 (누구나 가능)",
     request_body=EmailVerificationSerializer,
     responses={200: openapi.Response(description="Verification code sent"), 404: 'Not Found'}
 )
 
-# 이메일 인증코드 보내기
+# 이메일 인증코드 보내기(비회원일때)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def non_user_sendcode(request):
+    serializer = EmailVerificationSerializer(data=request.data)
+    if serializer.is_valid():
+        email = serializer.validated_data['email']
+        user = User.objects.filter(email=email).first()
+        if user:
+            return Response({'detail': 'Email already exists', 'code': 'email_exists'}, status=status.HTTP_400_BAD_REQUEST)
+        # 6자리 숫자 코드 생성
+        code = str(random.randint(100000, 999999))
+        # 5분 동안 유효
+        cache.set(f'verification_code_{email}', code, timeout=300)
+        message = f'인증 코드는 {code}'
+        send_mail(
+            'Your verification code',
+            message,
+            email,
+            [email],
+            fail_silently=False,
+        )
+        return Response({'message': 'Verification code sent.'}, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# 이메일 인증코드 보내기(회원일때)
+@swagger_auto_schema(
+    method='post',
+    tags=['User'],
+    operation_summary="이메일 인증(회원)",
+    operation_description="이메일 인증 보내기 (누구나 가능)",
+    request_body=EmailVerificationSerializer,
+    responses={200: openapi.Response(description="Verification code sent"), 404: 'Not Found'}
+)
+
+# 이메일 인증코드 보내기(회원일때)
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def send_verification_code(request):
@@ -387,10 +489,11 @@ def send_verification_code(request):
         email = serializer.validated_data['email']
         user = User.objects.filter(email=email).first()
         if user:
-            code = str(uuid.uuid4())
+            # 6자리 숫자 코드 생성
+            code = str(random.randint(100000, 999999))
             # 5분 동안 유효
             cache.set(f'verification_code_{email}', code, timeout=300)
-            message = '인증 코드는 {code}'.format(code=code)
+            message = f'인증 코드는 {code}'
             send_mail(
                 'Your verification code',
                 message,

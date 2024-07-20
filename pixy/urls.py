@@ -10,17 +10,18 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 schema_view = get_schema_view(
-   openapi.Info(
-      title="Pixy API",
-      default_version='v1',
-      description="API documentation for Pixy project",
-      terms_of_service="https://www.yourapp.com/terms/",
-      contact=openapi.Contact(email="contact@yourapp.com"),
-      license=openapi.License(name="KT Aivle AI 24 License"),
-   ),
-   public=True,
-   permission_classes=[permissions.AllowAny],
+    openapi.Info(
+        title="Pixy API",
+        default_version='v1',
+        description="API documentation for Pixy project",
+        terms_of_service="https://www.yourapp.com/terms/",
+        contact=openapi.Contact(email="contact@yourapp.com"),
+        license=openapi.License(name="KT Aivle AI 24 License"),
+    ),
+    public=True,
+    permission_classes=[permissions.AllowAny],
 )
+
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -30,6 +31,7 @@ def api_root(request):
         'swagger': request.build_absolute_uri('swagger/'),
         'redoc': request.build_absolute_uri('redoc/'),
     })
+
 
 urlpatterns = [
     path('', api_root),
@@ -41,14 +43,15 @@ urlpatterns = [
     path('api/store/', include('store.urls')),
     path('api/notifications/', include('notifications.urls')),
     path('api/fire_detection/', include('fire_detection.urls')),
-    
-    # Swagger UI
-    re_path(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
-    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
-    
-    # ReDoc
-    path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
-]
+    path('api/theft_detection/', include('theft_detecion.urls')),
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    # Swagger UI
+    re_path(r'^swagger(?P<format>\.json|\.yaml)$',
+            schema_view.without_ui(cache_timeout=0), name='schema-json'),
+    path('swagger/', schema_view.with_ui('swagger',
+         cache_timeout=0), name='schema-swagger-ui'),
+
+    # ReDoc
+    path('redoc/', schema_view.with_ui('redoc',
+         cache_timeout=0), name='schema-redoc'),
+]
