@@ -19,37 +19,42 @@ from .s3_utils import list_processed_videos
 
 logger = logging.getLogger(__name__)
 
+
 def get_kst_time():
     kst = timezone(timedelta(hours=9))  # KST (UTC+9)
     return datetime.now(kst)
 
+
 def safe_filename(filename):
     return re.sub(r'[\\/:"*?<>|]+', '_', filename)
+
 
 def transform_s3_url(url):
     parsed_url = urlparse(url)
     return urlunparse((parsed_url.scheme, settings.AWS_S3_CUSTOM_DOMAIN, parsed_url.path, parsed_url.params, parsed_url.query, parsed_url.fragment))
 
+
 def process_and_save_video(video_instance):
     try:
-        
+
         original_video_url = video_instance.video_file.url  # 원본 영상 URL
         processed_video_name = safe_filename(os.path.splitext(
             os.path.basename(video_instance.video_file.name))[0]) + ".mp4"
         s3_output_name = f'media/videos_fire/processed/{processed_video_name}'
         orgin_s3_output_name = f'videos_fire/processed/{processed_video_name}'
-        
+
         upload_time = get_kst_time().strftime("%Y-%m-%d %H:%M:%S")
 
         print(f"Original video URL: {original_video_url} - DEBUG300")
         print(f"S3 Output Key: {s3_output_name} - DEBUG301")
-        
+
         # 화재 감지 여부
-        fire_detected = detect_fire(original_video_url, s3_output_name, upload_time)
-        
+        fire_detected = detect_fire(
+            original_video_url, s3_output_name, upload_time)
+
         # print(f"Original video URL(transformed): {transform_video_url} - DEBUG301")
         # print(f"S3 Output Key: {s3_output_name}")
-        
+
         # fire_detected = detect_fire(transform_video_url, s3_output_name, upload_time)
 
         # 비디오 모델 저장
@@ -57,7 +62,8 @@ def process_and_save_video(video_instance):
         video_instance.fire_detected = fire_detected
         video_instance.save()
 
-        print(f"Video instance saved with processed video path: {video_instance.processed_video.name}")
+        print(
+            f"Video instance saved with processed video path: {video_instance.processed_video.name}")
 
         return True
     except Exception as e:
@@ -87,8 +93,8 @@ def video_list(request):
     tags=['fire_detection'],
     operation_summary="Upload a new video",
     operation_description="Upload a new video and process it",
-    request_body=VideoSerializer,
-    responses={201: VideoSerializer, 400: 'Bad Request'}
+    request_body=VideoCreateSerializer,
+    responses={201: VideoCreateSerializer, 400: 'Bad Request'}
 )
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -102,11 +108,11 @@ def upload_video(request):
         original_filename = safe_filename(request.FILES['video_file'].name)
         s3_key = f'media/videos_fire/original/{original_filename}'
         orign_s3_key = f'videos_fire/original/{original_filename}'
-            
+
         try:
             print(f"Attempting to upload file to S3 with key {s3_key}")
             s3_url = upload_file_to_s3(
-                request.FILES['original_video'], settings.BUCKET_NAME, s3_key)
+                request.FILES['video_file'], settings.AWS_STORAGE_BUCKET_NAME, s3_key)
 
             print(f"File uploaded to S3 successfully: {s3_key}")
             print(f"Uploaded file URL: {s3_url}")
@@ -118,7 +124,7 @@ def upload_video(request):
                 return Response(VideoCreateSerializer(video_instance).data, status=status.HTTP_201_CREATED)
             else:
                 return Response({"error": "An error occurred while processing the video."}, status=status.HTTP_400_BAD_REQUEST)
-            
+
         except Exception as e:
             logger.error(f"An error occurred while uploading the video: {e}")
             return Response({"error": f"An error occurred while uploading the video: {e}"}, status=status.HTTP_400_BAD_REQUEST)
@@ -126,21 +132,6 @@ def upload_video(request):
         logger.warning("Form is not valid.")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# @swagger_auto_schema(
-#     method='get',
-#     tags=['fire_detection'],
-#     operation_summary="Retrieve video details",
-#     operation_description="Get details of a specific video entry",
-#     responses={200: VideoSerializer, 404: 'Not Found'}
-# )
-# @api_view(['GET'])
-# @permission_classes([AllowAny])
-# def video_detail(request, pk):
-#     video = get_object_or_404(Video, pk=pk)
-#     transformed_video_url = transform_s3_url(video.processed_video.url)
-    
-#     print(f"S3 processed transformed URL : {transformed_video_url}" + "-DEBUG302")
-#     return render(request, 'fire_detection/video_detail.html', {'video': video, 'transformed_video_url': transformed_video_url})
 
 @swagger_auto_schema(
     method='get',
@@ -156,48 +147,3 @@ def video_detail(request, pk):
     serializer = VideoDetailSerializer(video)
     return Response(serializer.data, status=status.HTTP_200_OK)
     # return render(request, 'video_processor/video_detail.html', {'video': video, 'transformed_video_url': video.processed_video.url})
-
-
-# def upload(request):
-#     if request.method == 'POST' and request.FILES.get('video_file'):
-#         video_file = request.FILES['video_file']
-        
-#         # Upload original video to S3 original/ folder
-#         try:
-#             original_key = f"original/{video_file.name}"
-#             s3.upload_fileobj(
-#                 video_file,
-#                 settings.BUCKET_NAME,
-#                 original_key,
-#                 ExtraArgs={'ContentType': video_file.content_type}
-#             )
-#             uploaded_file_url = f"https://{settings.BUCKET_NAME}.s3.{settings.AWS_REGION}.amazonaws.com/{original_key}"
-            
-#             # Define output directory in S3 processed/ folder
-#             output_dir = 'processed'  # S3 processed directory
-            
-#             # Run fire detection model
-#             fire_detected, processed_video_url = detect_fire(video_path=original_key, output_dir=output_dir)
-            
-#             # Save the video instance to the database
-#             video_instance = Video(video_file=original_key, processed_file=processed_video_url, fire_detected=fire_detected)
-#             video_instance.save()
-            
-#             # Save the video instance to the database
-            
-#             return render(request, 'detection/upload.html', {
-#                 'uploaded_file_url': uploaded_file_url,
-#                 'output_url': processed_video_url,
-#                 'fire_detected': fire_detected
-#             })
-            
-#         except ClientError as e:
-#             print(f"Error uploading file to S3: {e}")
-#             return render(request, 'detection/upload.html', {'error_message': 'Failed to upload file to S3.'})
-    
-#     return render(request, 'detection/upload.html')
-
-def result(request, video_id):
-    video = get_object_or_404(Video, id=video_id)
-    serializer = VideoSerializer(video)
-    return render(request, 'detection/result.html', {'video': serializer.data})

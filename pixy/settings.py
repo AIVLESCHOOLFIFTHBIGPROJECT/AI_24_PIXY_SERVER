@@ -202,7 +202,7 @@ SIMPLE_JWT = {
     'BLACKLIST_AFTER_ROTATION': True,
 }
 # 이미지 추가
-MEDIA_URL = '/media/'
+# MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 # 비밀번호 재설정(이메일 수신 : 발신(google))
@@ -228,12 +228,11 @@ STATE = env('STATE')
 
 # S3 연결키
 # Load environment variables
-AWS_KEY = env('AWS_KEY')
-AWS_SECRET = env('AWS_SECRET')
+AWS_S3_ACCESS_KEY_ID = env('AWS_KEY')
+AWS_S3_SECRET_ACCESS_KEY = env('AWS_SECRET')
 AWS_REGION = env('AWS_REGION')
-BUCKET_NAME = env('AWS_BUCKET_NAME')
-AWS_DOMAIN = '%s.s3.%s.amazonaws.com' % (
-    BUCKET_NAME, AWS_REGION)
-# AWS_DOMAIN = f'{BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com'
-# DEFAULT_FILE_STORAGE = env('DEFAULT_FILE_STORAGE')
-MEDIA_URL = f'https://{AWS_DOMAIN}/media/'
+AWS_STORAGE_BUCKET_NAME = env('AWS_BUCKET_NAME')
+AWS_S3_CUSTOM_DOMAIN = '%s.s3.%s.amazonaws.com' % (
+    AWS_STORAGE_BUCKET_NAME, AWS_REGION)
+MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
+
