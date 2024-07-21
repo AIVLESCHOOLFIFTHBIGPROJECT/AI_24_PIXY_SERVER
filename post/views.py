@@ -175,7 +175,7 @@ def QnaList(request):
         serializer = QnaSerializer(data=request.data)
         
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(m_num=request.user)
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=404)
 
