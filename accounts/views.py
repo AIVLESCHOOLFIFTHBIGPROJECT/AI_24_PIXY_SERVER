@@ -30,7 +30,10 @@ import json, os, random
 from store.models import Store
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-
+from django.conf import settings
+import boto3
+from PIL import Image
+import io
 
 
 # 구글 소셜로그인 변수 설정
@@ -250,6 +253,76 @@ def logout(request):
 
 #     return Response({'message': '로그아웃 성공!!'}, status=status.HTTP_205_RESET_CONTENT)
 
+@swagger_auto_schema(
+    method='get',
+    tags=['User'],
+    operation_summary="이미지 조회",
+    operation_description="이미지 조회하기",
+    responses={
+        200: 'Image file',
+        404: 'Not Found',
+        500: 'Server Error'
+    }
+)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_image(request):
+    # 크로스 계정 S3 접근을 위한 설정
+    # sts_client = boto3.client('sts')
+    # STS 클라이언트 생성
+    sts_client = boto3.client(
+        'sts',
+        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+        region_name=settings.AWS_REGION
+    )
+    
+    assumed_role_object = sts_client.assume_role(
+        RoleArn=settings.S3_ROLE_ARN,
+        RoleSessionName=settings.ROLESESSION_NAME
+    )
+    # AWS S3 클라이언트 생성
+    s3_client = boto3.client(
+        's3',
+        aws_access_key_id=assumed_role_object['Credentials']['AccessKeyId'],
+        aws_secret_access_key=assumed_role_object['Credentials']['SecretAccessKey'],
+        aws_session_token=assumed_role_object['Credentials']['SessionToken']
+    )
+    # 쿼리 매개변수에서 file_key 가져오기
+    file_key = str(request.user.business_r)
+    if not file_key:
+        return Response({'error': '사업자 등록증이 없습니다.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # 버킷 이름 설정
+    bucket_name = settings.AWS_STORAGE_BUCKET_NAME
+
+    try:
+        # file_key에서 s3_key 추출
+        s3_key = file_key.replace(f'https://{settings.AWS_S3_CUSTOM_DOMAIN}/', '')
+        
+        # S3에서 파일 가져오기
+        response = s3_client.get_object(Bucket=bucket_name, Key=s3_key)
+        file_stream = response['Body'].read()
+
+        # 이미지 파일 열기
+        img_io = io.BytesIO(file_stream)
+        result = Image.open(img_io)
+
+        # 파일 형식에 따라 적절한 Content-Type 설정
+        content_type = 'image/jpeg'
+        if result.format.lower() == 'png':
+            content_type = 'image/png'
+        elif result.format.lower() == 'gif':
+            content_type = 'image/gif'
+
+        # 이미지 파일을 HttpResponse로 반환
+        img_io.seek(0)
+        return HttpResponse(img_io, content_type=content_type)
+    
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
 # 회원정보 조회
 @swagger_auto_schema(
     method='get',
@@ -459,7 +532,7 @@ def non_user_sendcode(request):
         code = str(random.randint(100000, 999999))
         # 5분 동안 유효
         cache.set(f'verification_code_{email}', code, timeout=300)
-        message = f'인증 코드는 {code}'
+        message = f'인증번호는 {code}'
         send_mail(
             'Your verification code',
             message,
@@ -493,7 +566,7 @@ def send_verification_code(request):
             code = str(random.randint(100000, 999999))
             # 5분 동안 유효
             cache.set(f'verification_code_{email}', code, timeout=300)
-            message = f'인증 코드는 {code}'
+            message = f'인증 번호는 {code}'
             send_mail(
                 'Your verification code',
                 message,
