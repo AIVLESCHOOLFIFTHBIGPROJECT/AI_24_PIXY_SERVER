@@ -8,7 +8,7 @@ PIXY는 KT Aivle 5기 과정에서 개발된 혁신적인 AI 기반 예측 및 �
 - `/backend`: Django REST Framework 기반 API 서버
 - `/custom-llm`: BERT 기반 커스텀 언어 모델
 - `/ai-models`: 머신러닝 및 딥러닝 모델
-  - `/time-series`: LSTM 기반 시계열 데이터 예측 모델
+  - `/sales-prediction`: RandomForest 기반 시계열 데이터 예측 모델
   - `/anomaly-detection`: Isolation Forest 기반 이상 행동 예측 모델
   - `/fire-prediction`: XGBoost 기반 화재 예측 모델
 

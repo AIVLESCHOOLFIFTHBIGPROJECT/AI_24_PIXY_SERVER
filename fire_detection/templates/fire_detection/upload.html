@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload Video</title>
+</head>
+<body>
+    <h1>Upload Video</h1>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="file" name="video_file" accept="video/*">
+        <button type="submit">Upload</button>
+    </form>
+    
+    {% if uploaded_file_url %}
+        <h2>Original Video:</h2>
+        <video width="600" controls>
+            <source src="{{ uploaded_file_url }}" type="video/mp4">
+        </video>
+    {% endif %}
+    {% if output_url %}
+        <h2>Processed Video:</h2>
+        <video width="600" controls>
+            <source src="{{ output_url }}" type="video/mp4">
+        </video>
+    {% endif %}
+    {% if fire_detected is not None %}
+        <p>Fire detected in the video: {{ fire_detected }}</p>
+    {% endif %}
+</body>
+</html>

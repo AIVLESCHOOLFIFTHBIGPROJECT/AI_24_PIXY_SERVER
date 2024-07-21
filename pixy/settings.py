@@ -6,6 +6,7 @@ import os
 import json
 import pymysql
 
+
 # environ 설정
 env = environ.Env(
     DEBUG=(bool, False)
@@ -40,6 +41,7 @@ INSTALLED_APPS = [
     'post',
     'product',
     'store',
+    'pixycustom',
     'rest_framework',
     'rest_framework.authtoken',
     'rest_framework_simplejwt',
@@ -47,6 +49,7 @@ INSTALLED_APPS = [
     'drf_yasg',
     'dj_rest_auth',
     'dj_rest_auth.registration',
+    'fire_detection',
     'storages',
 
     'allauth',
@@ -73,7 +76,7 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    "https://pixy.kro.kr",
+    # "https://pixy.kro.kr",
     "http://localhost:3000",  # 개발 환경용
     "http://localhost:8000",  # 개발 환경용
 ]
@@ -233,9 +236,12 @@ STATE = env('STATE')
 AWS_S3_ACCESS_KEY_ID = env('AWS_S3_ACCESS_KEY_ID')
 AWS_S3_SECRET_ACCESS_KEY = env('AWS_S3_SECRET_ACCESS_KEY')
 AWS_REGION = env('AWS_REGION')
+S3_ROLE_ARN = env('S3_ROLE_ARN')
 
 AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME')
 AWS_S3_CUSTOM_DOMAIN = '%s.s3.%s.amazonaws.com' % (
     AWS_STORAGE_BUCKET_NAME, AWS_REGION)
 DEFAULT_FILE_STORAGE = env('DEFAULT_FILE_STORAGE')
 MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
+# ChatGPT
+CHATGPT_API_KEY=env('CHATGPT_API_KEY')

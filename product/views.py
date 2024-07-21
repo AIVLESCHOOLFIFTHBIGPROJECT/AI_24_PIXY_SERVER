@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from rest_framework import generics
-from .models import Product,Sales
+from .models import Product,Sales,Store
 from .serializers import ProductSerializer,SalesSerializer
 
 from rest_framework import status
@@ -31,12 +31,18 @@ from drf_yasg import openapi
 @api_view(['GET','POST'])
 @permission_classes([AllowAny])
 def ProductList(requset):
-    #Read
-    if requset.method=='GET':
-         product=Product.objects.all()
-         serializer=ProductSerializer(product,many=True)
-         
-         return Response(serializer.data)
+   # Read
+    if requset.method == 'GET':
+        try:
+            # 현재 로그인된 사용자의 Store 정보 가져오기
+            store = Store.objects.get(m_num=requset.user)
+        except Store.DoesNotExist:
+            return Response({'error': 'Store not found for this user'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # 로그인된 사용자의 s_num에 맞는 제품 필터링
+        products = Product.objects.filter(s_num=store)
+        serializer = ProductSerializer(products, many=True)
+        return Response(serializer.data)
 
     #Create
     elif requset.method=='POST':
@@ -118,7 +124,14 @@ def ProductDetail(requset,pk):
 def SalesList(request):
     # Read
     if request.method == 'GET':
-        sales = Sales.objects.all()
+        try:
+            # 현재 로그인된 사용자의 Store 정보 가져오기
+            store = Store.objects.get(m_num=request.user)
+        except Store.DoesNotExist:
+            return Response({'error': 'Store not found for this user'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # 로그인된 사용자의 s_num에 맞는 Sales 필터링
+        sales = Sales.objects.filter(s_num2=store)
         serializer = SalesSerializer(sales, many=True)
         return Response(serializer.data)
 

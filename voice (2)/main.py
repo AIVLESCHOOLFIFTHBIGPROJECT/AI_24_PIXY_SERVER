@@ -48,9 +48,7 @@ def main(runtype):
     
     question='아이스크림 어딨어?' #추후 입력방식 수정
     
-    api_key = "sk"
-    # -proj-vXpYtLaISfUGA6hUzyA3T3BlbkFJ3peVmpRRw1IjilumnxMK"
-    # print(api_key)
+    api_key = "s"
 
     if runtype=='database':
         clear_folder('./database')

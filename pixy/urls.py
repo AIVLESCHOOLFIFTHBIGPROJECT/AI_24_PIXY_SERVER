@@ -6,6 +6,8 @@ from drf_yasg import openapi
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
+from django.conf import settings
+from django.conf.urls.static import static
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -40,7 +42,9 @@ urlpatterns = [
     path('api/product/', include('product.urls')),
     path('api/store/', include('store.urls')),
     path('api/notifications/', include('notifications.urls')),
+    path('api/fire_detection/', include('fire_detection.urls')),
     path('api/theft_detection/', include('theft_detecion.urls')),
+    path('api/pixycustom/', include('pixycustom.urls')),
 
     # Swagger UI
     re_path(r'^swagger(?P<format>\.json|\.yaml)$',
