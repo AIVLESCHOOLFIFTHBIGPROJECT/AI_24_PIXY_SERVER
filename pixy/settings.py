@@ -76,7 +76,7 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    # "https://pixy.kro.kr",
+    "https://pixy.kro.kr",
     "http://localhost:3000",  # 개발 환경용
     "http://localhost:8000",  # 개발 환경용
 ]
@@ -244,4 +244,4 @@ AWS_S3_CUSTOM_DOMAIN = '%s.s3.%s.amazonaws.com' % (
 DEFAULT_FILE_STORAGE = env('DEFAULT_FILE_STORAGE')
 MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
 # ChatGPT
-CHATGPT_API_KEY=env('CHATGPT_API_KEY')
+CHATGPT_API_KEY = env('CHATGPT_API_KEY')
