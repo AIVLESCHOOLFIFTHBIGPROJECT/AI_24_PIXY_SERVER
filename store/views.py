@@ -156,7 +156,13 @@ def StoreUploadList(request):
             )
 
             # 크로스 계정 S3 접근을 위한 설정
-            sts_client = boto3.client('sts')
+            # sts_client = boto3.client('sts')
+            sts_client = boto3.client(
+                'sts',
+                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                region_name=settings.AWS_REGION
+            )
             try:
                 assumed_role_object = sts_client.assume_role(
                     RoleArn=settings.S3_ROLE_ARN,
@@ -286,7 +292,13 @@ def PredictUploadList(request):
             )
 
             # 크로스 계정 S3 접근을 위한 설정
-            sts_client = boto3.client('sts')
+            # sts_client = boto3.client('sts')
+            sts_client = boto3.client(
+                'sts',
+                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                region_name=settings.AWS_REGION
+            )
             try:
                 assumed_role_object = sts_client.assume_role(
                     RoleArn=settings.S3_ROLE_ARN,
