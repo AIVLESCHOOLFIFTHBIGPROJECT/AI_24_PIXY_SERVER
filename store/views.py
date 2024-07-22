@@ -149,7 +149,7 @@ def StoreUploadList(request):
             ext = os.path.splitext(uploaded_file.name)[1]
             if ext not in WHITE_LIST_EXT:
                 return Response({'error': f'Invalid file extension: {ext}. Allowed extensions are: {WHITE_LIST_EXT}'}, status=status.HTTP_400_BAD_REQUEST)
-            
+            # print(serializer)
             store_upload = serializer.save(
                 s_num=store,
                 m_num=request.user
@@ -159,8 +159,8 @@ def StoreUploadList(request):
             sts_client = boto3.client('sts')
             try:
                 assumed_role_object = sts_client.assume_role(
-                    RoleArn="arn:aws:iam::000557732562:role/cross",
-                    RoleSessionName="AssumeRoleSession"
+                    RoleArn=settings.S3_ROLE_ARN,
+                    RoleSessionName=settings.ROLESESSION_NAME
                 )
                 
                 s3_client = boto3.client(
@@ -178,7 +178,6 @@ def StoreUploadList(request):
                 body = csv_obj['Body']
                 csv_string = body.read().decode('utf-8')
                 reader = csv.DictReader(StringIO(csv_string))
-                
                 for row in reader:
                     Product.objects.create(
                         s_num=store_upload.s_num,
@@ -189,7 +188,6 @@ def StoreUploadList(request):
                         promotion=row['promotion'],
                         stock=row['stock'],
                     )
-
             except ClientError as e:
                 return Response({'error': f"S3 access error: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
             except Exception as e:
@@ -291,8 +289,8 @@ def PredictUploadList(request):
             sts_client = boto3.client('sts')
             try:
                 assumed_role_object = sts_client.assume_role(
-                    RoleArn="arn:aws:iam::000557732562:role/cross",
-                    RoleSessionName="AssumeRoleSession"
+                    RoleArn=settings.S3_ROLE_ARN,
+                    RoleSessionName=settings.ROLESESSION_NAME
                 )
                 
                 s3_client = boto3.client(

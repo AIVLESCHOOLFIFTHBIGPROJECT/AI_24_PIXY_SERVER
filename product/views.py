@@ -5,7 +5,7 @@ from .serializers import ProductSerializer,SalesSerializer
 
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes,parser_classes
-from rest_framework.permissions import AllowAny,IsAdminUser
+from rest_framework.permissions import AllowAny,IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from django.http import Http404
 from rest_framework.parsers import MultiPartParser,FormParser
@@ -29,7 +29,7 @@ from drf_yasg import openapi
     responses={201: ProductSerializer, 400: 'Bad Request'}
 )
 @api_view(['GET','POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def ProductList(requset):
    # Read
     if requset.method == 'GET':
