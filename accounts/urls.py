@@ -12,6 +12,7 @@ urlpatterns = [
     path('delete_user/normal/', views.delete_user, name='delete_user'),
     path('duplicate_userid/normal/', views.duplicate_userid, name='duplicate_userid'),
     path('duplicate_phonenumber/normal/', views.duplicate_phonenumber, name='duplicate_phonenumber'),
+    path('image_get/normal/', views.get_image, name='image_get'),
     # 토큰 재발급
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     # 구글 소셜 로그인
@@ -26,5 +27,8 @@ urlpatterns = [
     path('send-code/user/', views.send_verification_code, name='send_code_user'),
     path('send-code/nonuser/', views.non_user_sendcode, name='send_code_nonuser'),
     path('verify-code/', views.verify_code, name='verify_code'),
+    path('nonuser_verify/', views.nonuser_verify, name='nonuser_verify'),
     path('reset-password/', views.reset_password, name='reset_password'),
+    # 이메일 찾기 find_email
+    path('find_email/', views.find_email, name='find_email'),
 ]

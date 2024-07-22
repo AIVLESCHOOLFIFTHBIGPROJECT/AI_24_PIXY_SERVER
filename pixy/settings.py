@@ -76,7 +76,7 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    # "https://pixy.kro.kr",
+    "https://pixy.kro.kr",
     "http://localhost:3000",  # 개발 환경용
     "http://localhost:8000",  # 개발 환경용
 ]
@@ -237,6 +237,7 @@ AWS_S3_ACCESS_KEY_ID = env('AWS_S3_ACCESS_KEY_ID')
 AWS_S3_SECRET_ACCESS_KEY = env('AWS_S3_SECRET_ACCESS_KEY')
 AWS_REGION = env('AWS_REGION')
 S3_ROLE_ARN = env('S3_ROLE_ARN')
+ROLESESSION_NAME = env('ROLESESSION_NAME')
 
 AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME')
 AWS_S3_CUSTOM_DOMAIN = '%s.s3.%s.amazonaws.com' % (
@@ -245,3 +246,5 @@ DEFAULT_FILE_STORAGE = env('DEFAULT_FILE_STORAGE')
 MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
 # ChatGPT
 CHATGPT_API_KEY=env('CHATGPT_API_KEY')
+AWS_ACCESS_KEY_ID = env('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY')
