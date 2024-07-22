@@ -43,7 +43,7 @@ from botocore.exceptions import ClientError
 def StoreList(request):
     #Read
     if request.method=='GET':
-         store=Store.objects.all()
+         store=Store.objects.filter(m_num=request.user)
          serializer=StoreSerializer(store,many=True)
          
          return Response(serializer.data)
