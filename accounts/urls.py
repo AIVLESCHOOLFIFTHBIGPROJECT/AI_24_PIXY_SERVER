@@ -27,5 +27,8 @@ urlpatterns = [
     path('send-code/user/', views.send_verification_code, name='send_code_user'),
     path('send-code/nonuser/', views.non_user_sendcode, name='send_code_nonuser'),
     path('verify-code/', views.verify_code, name='verify_code'),
+    path('nonuser_verify/', views.nonuser_verify, name='nonuser_verify'),
     path('reset-password/', views.reset_password, name='reset_password'),
+    # 이메일 찾기 find_email
+    path('find_email/', views.find_email, name='find_email'),
 ]

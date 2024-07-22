@@ -480,6 +480,37 @@ def duplicate_userid(request):
 
 @swagger_auto_schema(
     method='post',
+    operation_summary="이메일 찾기",
+    operation_description="이름, 휴대폰번호로 이메일 찾기",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'name': openapi.Schema(type=openapi.TYPE_STRING, description='이름'),
+            'p_num': openapi.Schema(type=openapi.TYPE_STRING, description='휴대폰 번호')
+        },
+        required=['p_num','name']
+    ),
+    responses={
+        200: openapi.Response(description='Success', examples={'application/json': {'message': '해당 아이디는 이거입니다.'}}),
+        400: openapi.Response(description='Email available', examples={'application/json': {'message': '해당 정보의 계정은 존재하지 않습니다.'}})
+    },
+    tags=['User']
+)
+
+# 이름, 휴대폰번호로 이메일 찾기
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def find_email(request):
+    p_num = request.data.get('p_num')
+    name = request.data.get('name')
+    User = get_user_model()
+    user = User.objects.filter(p_num=p_num, name=name)
+    if not user.exists():
+        return Response({'message': '해당 정보의 계정은 존재하지 않습니다.'}, status=status.HTTP_400_BAD_REQUEST)
+    return Response(user.first().email, status=status.HTTP_200_OK)
+
+@swagger_auto_schema(
+    method='post',
     operation_summary="휴대폰 중복확인",
     operation_description="휴대폰 중복확인(누구나 가능)",
     request_body=openapi.Schema(
@@ -541,6 +572,32 @@ def non_user_sendcode(request):
             fail_silently=False,
         )
         return Response({'message': 'Verification code sent.'}, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# 이메일 인증코드 확인(비회원)
+@swagger_auto_schema(
+    method='post',
+    tags=['User'],
+    operation_summary="인증코드 확인(비회원)",
+    operation_description="이메일 인증코드 확인 (누구나 가능)",
+    request_body=VerifyCodeSerializer,
+    responses={200: openapi.Response(description="Code verified"), 404: 'Not Found'}
+)
+
+# 이메일 인증코드 확인(비회원) -> cache 삭제 포함
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def nonuser_verify(request):
+    serializer = VerifyCodeSerializer(data=request.data)
+    if serializer.is_valid():
+        email = serializer.validated_data['email']
+        code = serializer.validated_data['code']
+        cached_code = cache.get(f'verification_code_{email}')
+        if cached_code and cached_code == str(code):
+            # 인증 됐으면 삭제
+            cache.delete(f'verification_code_{email}')
+            return Response({'message': 'Code verified.'}, status=status.HTTP_200_OK)
+        return Response({'error': 'Invalid or expired code.'}, status=status.HTTP_400_BAD_REQUEST)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # 이메일 인증코드 보내기(회원일때)
@@ -617,18 +674,17 @@ def reset_password(request):
     serializer = ResetPasswordSerializer(data=request.data)
     if serializer.is_valid():
         email = serializer.validated_data['email']
-        code = serializer.validated_data['code']
+        # code = serializer.validated_data['code']
         new_password = serializer.validated_data['new_password']
-        cached_code = cache.get(f'verification_code_{email}')
-        if cached_code and cached_code == str(code):
-            user = User.objects.filter(email=email).first()
-            if user:
-                user.set_password(new_password)
-                user.save()
-                cache.delete(f'verification_code_{email}')  # 사용 후 코드 삭제
-                return Response({'message': 'Password reset successfully.'}, status=status.HTTP_200_OK)
-            return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
-        return Response({'error': 'Invalid or expired code.'}, status=status.HTTP_400_BAD_REQUEST)
+        # cached_code = cache.get(f'verification_code_{email}')
+        # if cached_code and cached_code == str(code):
+        user = User.objects.filter(email=email).first()
+        if user:
+            user.set_password(new_password)
+            user.save()
+            cache.delete(f'verification_code_{email}')  # 사용 후 코드 삭제
+            return Response({'message': 'Password reset successfully.'}, status=status.HTTP_200_OK)
+        return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # 소셜 로그인(구글)
