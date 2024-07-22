@@ -3,7 +3,12 @@ from django.conf import settings
 
 
 def list_processed_videos():
-    sts_client = boto3.client('sts')
+    sts_client = boto3.client(
+        'sts',
+        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+        region_name=settings.AWS_REGION
+    )
     assumed_role_object = sts_client.assume_role(
         RoleArn="arn:aws:iam::000557732562:role/cross",
         RoleSessionName="AssumeRoleSession"
