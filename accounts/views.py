@@ -731,6 +731,53 @@ def reset_password(request):
         return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+# 사업자등록번호 조회
+@swagger_auto_schema(
+    method='post',
+    operation_summary="사업자등록번호 조회",
+    operation_description="사업자등록번호 조회(누구나 가능)",
+    tags=['User'],
+    request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['b_no'],
+            properties={
+                'b_no': openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Items(type=openapi.TYPE_STRING), description="사업자등록번호 배열")
+            },
+        ),
+        responses={200: openapi.Response('성공', openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'status_code': openapi.Schema(type=openapi.TYPE_STRING, description="응답 상태 코드"),
+                'data': openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Items(type=openapi.TYPE_STRING), description="응답 데이터")
+            }
+        ))}
+)
+
+# 사업자등록번호 조회
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def check_business_registration(request):
+    try:
+        business_numbers = request.data.get('b_no')
+    except Exception as e:
+        return JsonResponse({'error': 'Invalid JSON or missing b_no'}, status=400)
+
+    # API URL 설정
+    service_key = settings.SERVICE_KEY
+    return_type = 'json'
+    url = f"https://api.odcloud.kr/api/nts-businessman/v1/status?serviceKey={service_key}&returnType={return_type}"
+
+    # 요청 바디 구성
+    json_body = {
+        'b_no': business_numbers
+    }
+    # API 요청
+    response = requests.post(url, json=json_body)
+    if response.status_code == 200:
+        return JsonResponse(response.json(), safe=False)
+    else:
+        # API로부터 오류 메시지를 포함하여 응답을 반환합니다.
+        return JsonResponse(response.json(), status=response.status_code)
 
 # 소셜 로그인(구글)
 from django.shortcuts import redirect

@@ -70,5 +70,6 @@ jobs:
         S3_ROLE_ARN: ${{ secrets.S3_ROLE_ARN }}
         ROLESESSION_NAME: ${{ secrets.ROLESESSION_NAME }}
         CHATGPT_API_KEY: ${{ secrets.CHATGPT_API_KEY }}
+        SERVICE_KEY: ${{ secrets.SERVICE_KEY }}
       run: |
         python manage.py test
