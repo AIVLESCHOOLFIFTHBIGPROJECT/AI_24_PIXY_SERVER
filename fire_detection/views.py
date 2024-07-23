@@ -31,8 +31,7 @@ def safe_filename(filename):
 def process_and_save_video(video_instance):
     try:
         original_video_url =  video_instance.video_file.url #f"media/{video_instance.video_file.name}"  # 원본 영상 URL
-        processed_video_name = safe_filename(os.path.splitext(
-            os.path.basename(video_instance.video_file.name))[0]) + ".mp4"
+        processed_video_name = safe_filename(os.path.splitext(os.path.basename(video_instance.video_file.name))[0]) + "_processed.mp4"
         s3_output_name = f'media/videos_fire/processed/{processed_video_name}'
         # orgin_s3_output_name = f'videos_fire/processed/{processed_video_name}'
 
