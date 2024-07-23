@@ -32,4 +32,6 @@ urlpatterns = [
     path('reset-password/', views.reset_password, name='reset_password'),
     # 이메일 찾기 find_email
     path('find_email/', views.find_email, name='find_email'),
+    # 사업자등록번호 조회
+    path('check-business/', views.check_business_registration, name='check_business_registration'),
 ]
