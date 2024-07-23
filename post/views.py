@@ -162,7 +162,7 @@ from drf_yasg import openapi
     responses={201: QnaSerializer, 400: 'Bad Request'}
 )
 @api_view(['GET', 'POST'])
-@permission_classes([AllowAny]) #IsAuthenticated로 바꾸면됨
+@permission_classes([AllowAny]) 
 def QnaList(request):
     # Read
     if request.method == 'GET':
