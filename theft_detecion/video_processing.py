@@ -274,7 +274,7 @@ def process_video(url, s3_output_name, upload_time):
         return s3_output_name, False
 
     # 이상 행동 감지 여부
-    abnormal_behavior_detected = max_score > 0.80
+    abnormal_behavior_detected = bool(max_score > 0.80)
     print(f's3_output_name: {s3_output_name}, \n local_output_path: {local_output_path}')
     
     try:
