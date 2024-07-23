@@ -20,17 +20,19 @@ sts_client = boto3.client(
     aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
     region_name=settings.AWS_REGION
 )
+
 assumed_role_object = sts_client.assume_role(
-    RoleArn="arn:aws:iam::000557732562:role/cross",
+    RoleArn=settings.S3_ROLE_ARN,
     RoleSessionName="AssumeRoleSession"
 )
+
 s3_client = boto3.client(
     's3',
     aws_access_key_id=assumed_role_object['Credentials']['AccessKeyId'],
     aws_secret_access_key=assumed_role_object['Credentials']['SecretAccessKey'],
-    aws_session_token=assumed_role_object['Credentials']['SessionToken']
+    aws_session_token=assumed_role_object['Credentials']['SessionToken'],
+    region_name=settings.AWS_REGION
 )
-
 
 # YOLOv8 모델 로드
 model_path_yolo = 'yolov8n.pt'  # YOLOv8 모델 경로

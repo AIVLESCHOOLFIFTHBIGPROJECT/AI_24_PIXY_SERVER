@@ -30,7 +30,10 @@ import json, os, random
 from store.models import Store
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-
+from django.conf import settings
+import boto3
+from PIL import Image
+import io
 
 
 # 구글 소셜로그인 변수 설정
@@ -250,6 +253,76 @@ def logout(request):
 
 #     return Response({'message': '로그아웃 성공!!'}, status=status.HTTP_205_RESET_CONTENT)
 
+@swagger_auto_schema(
+    method='get',
+    tags=['User'],
+    operation_summary="이미지 조회",
+    operation_description="이미지 조회하기",
+    responses={
+        200: 'Image file',
+        404: 'Not Found',
+        500: 'Server Error'
+    }
+)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_image(request):
+    # 크로스 계정 S3 접근을 위한 설정
+    # sts_client = boto3.client('sts')
+    # STS 클라이언트 생성
+    sts_client = boto3.client(
+        'sts',
+        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+        region_name=settings.AWS_REGION
+    )
+    
+    assumed_role_object = sts_client.assume_role(
+        RoleArn=settings.S3_ROLE_ARN,
+        RoleSessionName=settings.ROLESESSION_NAME
+    )
+    # AWS S3 클라이언트 생성
+    s3_client = boto3.client(
+        's3',
+        aws_access_key_id=assumed_role_object['Credentials']['AccessKeyId'],
+        aws_secret_access_key=assumed_role_object['Credentials']['SecretAccessKey'],
+        aws_session_token=assumed_role_object['Credentials']['SessionToken']
+    )
+    # 쿼리 매개변수에서 file_key 가져오기
+    file_key = str(request.user.business_r)
+    if not file_key:
+        return Response({'error': '사업자 등록증이 없습니다.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # 버킷 이름 설정
+    bucket_name = settings.AWS_STORAGE_BUCKET_NAME
+
+    try:
+        # file_key에서 s3_key 추출
+        s3_key = file_key.replace(f'https://{settings.AWS_S3_CUSTOM_DOMAIN}/', '')
+        
+        # S3에서 파일 가져오기
+        response = s3_client.get_object(Bucket=bucket_name, Key=s3_key)
+        file_stream = response['Body'].read()
+
+        # 이미지 파일 열기
+        img_io = io.BytesIO(file_stream)
+        result = Image.open(img_io)
+
+        # 파일 형식에 따라 적절한 Content-Type 설정
+        content_type = 'image/jpeg'
+        if result.format.lower() == 'png':
+            content_type = 'image/png'
+        elif result.format.lower() == 'gif':
+            content_type = 'image/gif'
+
+        # 이미지 파일을 HttpResponse로 반환
+        img_io.seek(0)
+        return HttpResponse(img_io, content_type=content_type)
+    
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
 # 회원정보 조회
 @swagger_auto_schema(
     method='get',
@@ -407,6 +480,37 @@ def duplicate_userid(request):
 
 @swagger_auto_schema(
     method='post',
+    operation_summary="이메일 찾기",
+    operation_description="이름, 휴대폰번호로 이메일 찾기",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'name': openapi.Schema(type=openapi.TYPE_STRING, description='이름'),
+            'p_num': openapi.Schema(type=openapi.TYPE_STRING, description='휴대폰 번호')
+        },
+        required=['p_num','name']
+    ),
+    responses={
+        200: openapi.Response(description='Success', examples={'application/json': {'message': '해당 아이디는 이거입니다.'}}),
+        400: openapi.Response(description='Email available', examples={'application/json': {'message': '해당 정보의 계정은 존재하지 않습니다.'}})
+    },
+    tags=['User']
+)
+
+# 이름, 휴대폰번호로 이메일 찾기
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def find_email(request):
+    p_num = request.data.get('p_num')
+    name = request.data.get('name')
+    User = get_user_model()
+    user = User.objects.filter(p_num=p_num, name=name)
+    if not user.exists():
+        return Response({'message': '해당 정보의 계정은 존재하지 않습니다.'}, status=status.HTTP_400_BAD_REQUEST)
+    return Response(user.first().email, status=status.HTTP_200_OK)
+
+@swagger_auto_schema(
+    method='post',
     operation_summary="휴대폰 중복확인",
     operation_description="휴대폰 중복확인(누구나 가능)",
     request_body=openapi.Schema(
@@ -459,7 +563,7 @@ def non_user_sendcode(request):
         code = str(random.randint(100000, 999999))
         # 5분 동안 유효
         cache.set(f'verification_code_{email}', code, timeout=300)
-        message = f'인증 코드는 {code}'
+        message = f'인증번호는 {code}'
         send_mail(
             'Your verification code',
             message,
@@ -468,6 +572,32 @@ def non_user_sendcode(request):
             fail_silently=False,
         )
         return Response({'message': 'Verification code sent.'}, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# 이메일 인증코드 확인(비회원)
+@swagger_auto_schema(
+    method='post',
+    tags=['User'],
+    operation_summary="인증코드 확인(비회원)",
+    operation_description="이메일 인증코드 확인 (누구나 가능)",
+    request_body=VerifyCodeSerializer,
+    responses={200: openapi.Response(description="Code verified"), 404: 'Not Found'}
+)
+
+# 이메일 인증코드 확인(비회원) -> cache 삭제 포함
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def nonuser_verify(request):
+    serializer = VerifyCodeSerializer(data=request.data)
+    if serializer.is_valid():
+        email = serializer.validated_data['email']
+        code = serializer.validated_data['code']
+        cached_code = cache.get(f'verification_code_{email}')
+        if cached_code and cached_code == str(code):
+            # 인증 됐으면 삭제
+            cache.delete(f'verification_code_{email}')
+            return Response({'message': 'Code verified.'}, status=status.HTTP_200_OK)
+        return Response({'error': 'Invalid or expired code.'}, status=status.HTTP_400_BAD_REQUEST)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # 이메일 인증코드 보내기(회원일때)
@@ -493,7 +623,7 @@ def send_verification_code(request):
             code = str(random.randint(100000, 999999))
             # 5분 동안 유효
             cache.set(f'verification_code_{email}', code, timeout=300)
-            message = f'인증 코드는 {code}'
+            message = f'인증 번호는 {code}'
             send_mail(
                 'Your verification code',
                 message,
@@ -505,58 +635,149 @@ def send_verification_code(request):
         return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# 이메일 인증코드 확인
+# 이메일 인증코드 확인(로그인 페이지)
 @swagger_auto_schema(
     method='post',
     tags=['User'],
-    operation_summary="인증코드 확인",
-    operation_description="이메일 인증코드 확인 (누구나 가능)",
+    operation_summary="인증코드 확인(로그인 페이지)",
+    operation_description="이메일 인증코드 확인 (회원이면 누구나 가능)",
     request_body=VerifyCodeSerializer,
     responses={200: openapi.Response(description="Code verified"), 404: 'Not Found'}
 )
-# 이메일 인증코드 확인
+# 이메일 인증코드 확인 - 로그인 페이지 비밀번호 재설정용(jwt토큰 필요)
 @api_view(['POST'])
 @permission_classes([AllowAny])
-def verify_code(request):
+def verify_code_login(request):
     serializer = VerifyCodeSerializer(data=request.data)
     if serializer.is_valid():
         email = serializer.validated_data['email']
+        # 아이디가 존재하지 않을때
+        user = User.objects.filter(email=email).first()
+        if user is None:
+            return Response({'message': '해당 아이디가 존재하지 않습니다.'}, status=status.HTTP_401_UNAUTHORIZED)
+        refresh = RefreshToken.for_user(user)
         code = serializer.validated_data['code']
         cached_code = cache.get(f'verification_code_{email}')
         if cached_code and cached_code == str(code):
-            return Response({'message': 'Code verified.'}, status=status.HTTP_200_OK)
+            secrets_token = str(refresh.access_token)
+            response = Response({
+                'message': 'Code verified!!',
+                'secrets_token': secrets_token,
+            }, status=status.HTTP_200_OK)
+            response['Authorization'] = f'Bearer {secrets_token}'
+            return response
         return Response({'error': 'Invalid or expired code.'}, status=status.HTTP_400_BAD_REQUEST)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# 이메일 인증코드 확인(설정 페이지)
+@swagger_auto_schema(
+    method='post',
+    tags=['User'],
+    operation_summary="인증코드 확인(설정 페이지)",
+    operation_description="이메일 인증코드 확인(로그인한 사용자만)",
+    request_body=VerifyCodeSerializer,
+    responses={200: openapi.Response(description="Code verified"), 404: 'Not Found'}
+)
+
+# 이메일 인증코드 확인 - 설정 페이지 비밀번호 재설정용(jwt토큰 필요 x) -> 이미 발급받은 jwt가 있음.
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def verify_code_settings(request):
+    serializer = VerifyCodeSerializer(data=request.data)
+    if serializer.is_valid():
+        email = serializer.validated_data['email']
+        # 세션에서 토큰값 조회
+        secrets_token = request.session.get('access_token', None)
+        code = serializer.validated_data['code']
+        cached_code = cache.get(f'verification_code_{email}')
+        if cached_code and cached_code == str(code):
+            response = Response({
+                'message': 'Code verified!!',
+                'secrets_token': secrets_token,
+            }, status=status.HTTP_200_OK)
+            response['Authorization'] = f'Bearer {secrets_token}'
+            return response
+        return Response({'error': 'Invalid or expired code.'}, status=status.HTTP_400_BAD_REQUEST)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 # 비밀번호 재설정
 @swagger_auto_schema(
     method='post',
     tags=['User'],
     operation_summary="비밀번호 재설정",
-    operation_description="비밀번호 재설정하기 (누구나 가능)",
+    operation_description="비밀번호 재설정하기",
     request_body=ResetPasswordSerializer,
     responses={200: openapi.Response(description="Password reset successfully")}
 )
+
 # 비밀번호 재설정
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def reset_password(request):
     serializer = ResetPasswordSerializer(data=request.data)
     if serializer.is_valid():
         email = serializer.validated_data['email']
-        code = serializer.validated_data['code']
+        # code = serializer.validated_data['code']
         new_password = serializer.validated_data['new_password']
-        cached_code = cache.get(f'verification_code_{email}')
-        if cached_code and cached_code == str(code):
-            user = User.objects.filter(email=email).first()
-            if user:
-                user.set_password(new_password)
-                user.save()
-                cache.delete(f'verification_code_{email}')  # 사용 후 코드 삭제
-                return Response({'message': 'Password reset successfully.'}, status=status.HTTP_200_OK)
-            return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
-        return Response({'error': 'Invalid or expired code.'}, status=status.HTTP_400_BAD_REQUEST)
+        # cached_code = cache.get(f'verification_code_{email}')
+        # if cached_code and cached_code == str(code):
+        user = User.objects.filter(email=email).first()
+        if user:
+            user.set_password(new_password)
+            user.save()
+            cache.delete(f'verification_code_{email}')  # 사용 후 코드 삭제
+            return Response({'message': 'Password reset successfully.'}, status=status.HTTP_200_OK)
+        return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# 사업자등록번호 조회
+@swagger_auto_schema(
+    method='post',
+    operation_summary="사업자등록번호 조회",
+    operation_description="사업자등록번호 조회(누구나 가능)",
+    tags=['User'],
+    request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['b_no'],
+            properties={
+                'b_no': openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Items(type=openapi.TYPE_STRING), description="사업자등록번호 배열")
+            },
+        ),
+        responses={200: openapi.Response('성공', openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'status_code': openapi.Schema(type=openapi.TYPE_STRING, description="응답 상태 코드"),
+                'data': openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Items(type=openapi.TYPE_STRING), description="응답 데이터")
+            }
+        ))}
+)
+
+# 사업자등록번호 조회
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def check_business_registration(request):
+    try:
+        business_numbers = request.data.get('b_no')
+    except Exception as e:
+        return JsonResponse({'error': 'Invalid JSON or missing b_no'}, status=400)
+
+    # API URL 설정
+    service_key = settings.SERVICE_KEY
+    return_type = 'json'
+    url = f"https://api.odcloud.kr/api/nts-businessman/v1/status?serviceKey={service_key}&returnType={return_type}"
+
+    # 요청 바디 구성
+    json_body = {
+        'b_no': business_numbers
+    }
+    # API 요청
+    response = requests.post(url, json=json_body)
+    if response.status_code == 200:
+        return JsonResponse(response.json(), safe=False)
+    else:
+        # API로부터 오류 메시지를 포함하여 응답을 반환합니다.
+        return JsonResponse(response.json(), status=response.status_code)
 
 # 소셜 로그인(구글)
 from django.shortcuts import redirect
