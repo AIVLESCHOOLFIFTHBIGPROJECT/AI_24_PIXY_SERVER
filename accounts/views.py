@@ -635,41 +635,85 @@ def send_verification_code(request):
         return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# 이메일 인증코드 확인
+# 이메일 인증코드 확인(로그인 페이지)
 @swagger_auto_schema(
     method='post',
     tags=['User'],
-    operation_summary="인증코드 확인",
-    operation_description="이메일 인증코드 확인 (누구나 가능)",
+    operation_summary="인증코드 확인(로그인 페이지)",
+    operation_description="이메일 인증코드 확인 (회원이면 누구나 가능)",
     request_body=VerifyCodeSerializer,
     responses={200: openapi.Response(description="Code verified"), 404: 'Not Found'}
 )
-# 이메일 인증코드 확인
+# 이메일 인증코드 확인 - 로그인 페이지 비밀번호 재설정용(jwt토큰 필요)
 @api_view(['POST'])
 @permission_classes([AllowAny])
-def verify_code(request):
+def verify_code_login(request):
     serializer = VerifyCodeSerializer(data=request.data)
     if serializer.is_valid():
         email = serializer.validated_data['email']
+        # 아이디가 존재하지 않을때
+        user = User.objects.filter(email=email).first()
+        if user is None:
+            return Response({'message': '해당 아이디가 존재하지 않습니다.'}, status=status.HTTP_401_UNAUTHORIZED)
+        refresh = RefreshToken.for_user(user)
         code = serializer.validated_data['code']
         cached_code = cache.get(f'verification_code_{email}')
         if cached_code and cached_code == str(code):
-            return Response({'message': 'Code verified.'}, status=status.HTTP_200_OK)
+            secrets_token = str(refresh.access_token)
+            response = Response({
+                'message': 'Code verified!!',
+                'secrets_token': secrets_token,
+            }, status=status.HTTP_200_OK)
+            response['Authorization'] = f'Bearer {secrets_token}'
+            return response
         return Response({'error': 'Invalid or expired code.'}, status=status.HTTP_400_BAD_REQUEST)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# 이메일 인증코드 확인(설정 페이지)
+@swagger_auto_schema(
+    method='post',
+    tags=['User'],
+    operation_summary="인증코드 확인(설정 페이지)",
+    operation_description="이메일 인증코드 확인(로그인한 사용자만)",
+    request_body=VerifyCodeSerializer,
+    responses={200: openapi.Response(description="Code verified"), 404: 'Not Found'}
+)
+
+# 이메일 인증코드 확인 - 설정 페이지 비밀번호 재설정용(jwt토큰 필요 x) -> 이미 발급받은 jwt가 있음.
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def verify_code_settings(request):
+    serializer = VerifyCodeSerializer(data=request.data)
+    if serializer.is_valid():
+        email = serializer.validated_data['email']
+        # 세션에서 토큰값 조회
+        secrets_token = request.session.get('access_token', None)
+        code = serializer.validated_data['code']
+        cached_code = cache.get(f'verification_code_{email}')
+        if cached_code and cached_code == str(code):
+            response = Response({
+                'message': 'Code verified!!',
+                'secrets_token': secrets_token,
+            }, status=status.HTTP_200_OK)
+            response['Authorization'] = f'Bearer {secrets_token}'
+            return response
+        return Response({'error': 'Invalid or expired code.'}, status=status.HTTP_400_BAD_REQUEST)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 # 비밀번호 재설정
 @swagger_auto_schema(
     method='post',
     tags=['User'],
     operation_summary="비밀번호 재설정",
-    operation_description="비밀번호 재설정하기 (누구나 가능)",
+    operation_description="비밀번호 재설정하기",
     request_body=ResetPasswordSerializer,
     responses={200: openapi.Response(description="Password reset successfully")}
 )
+
 # 비밀번호 재설정
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def reset_password(request):
     serializer = ResetPasswordSerializer(data=request.data)
     if serializer.is_valid():
@@ -686,6 +730,7 @@ def reset_password(request):
             return Response({'message': 'Password reset successfully.'}, status=status.HTTP_200_OK)
         return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 # 소셜 로그인(구글)
 from django.shortcuts import redirect

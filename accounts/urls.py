@@ -26,7 +26,8 @@ urlpatterns = [
     # 이메일 인증(비밀번호 찾기)
     path('send-code/user/', views.send_verification_code, name='send_code_user'),
     path('send-code/nonuser/', views.non_user_sendcode, name='send_code_nonuser'),
-    path('verify-code/', views.verify_code, name='verify_code'),
+    path('verify-code-login/', views.verify_code_login, name='verify_code_login'),
+    path('verify-code-settings/', views.verify_code_settings, name='verify_code_settings'),
     path('nonuser_verify/', views.nonuser_verify, name='nonuser_verify'),
     path('reset-password/', views.reset_password, name='reset_password'),
     # 이메일 찾기 find_email
