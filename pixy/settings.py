@@ -63,6 +63,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -71,12 +72,11 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     'allauth.account.middleware.AccountMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    # "https://pixy.kro.kr",
+    "https://pixy.kro.kr",
     "http://localhost:3000",  # 개발 환경용
     "http://localhost:8000",  # 개발 환경용
 ]
@@ -232,11 +232,16 @@ SOCIAL_AUTH_GOOGLE_CLIENT_ID = env('SOCIAL_AUTH_GOOGLE_CLIENT_ID')
 SOCIAL_AUTH_GOOGLE_SECRET = env('SOCIAL_AUTH_GOOGLE_SECRET')
 STATE = env('STATE')
 
+# EC2
+AWS_ACCESS_KEY_ID = env('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY')
+
 # S3 Storages
 AWS_S3_ACCESS_KEY_ID = env('AWS_S3_ACCESS_KEY_ID')
 AWS_S3_SECRET_ACCESS_KEY = env('AWS_S3_SECRET_ACCESS_KEY')
 AWS_REGION = env('AWS_REGION')
 S3_ROLE_ARN = env('S3_ROLE_ARN')
+ROLESESSION_NAME = env('ROLESESSION_NAME')
 
 AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME')
 AWS_S3_CUSTOM_DOMAIN = '%s.s3.%s.amazonaws.com' % (
@@ -244,4 +249,8 @@ AWS_S3_CUSTOM_DOMAIN = '%s.s3.%s.amazonaws.com' % (
 DEFAULT_FILE_STORAGE = env('DEFAULT_FILE_STORAGE')
 MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
 # ChatGPT
-CHATGPT_API_KEY=env('CHATGPT_API_KEY')
+CHATGPT_API_KEY = env('CHATGPT_API_KEY')
+AWS_ACCESS_KEY_ID = env('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY')
+# 사업자등록번호 조회
+SERVICE_KEY = env('SERVICE_KEY')

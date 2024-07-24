@@ -15,6 +15,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from rest_framework.parsers import MultiPartParser, FormParser
 from .serializers import VideoDetailSerializer, VideoListSerializer, VideoCreateSerializer
+import boto3
 
 
 logger = logging.getLogger(__name__)
@@ -46,17 +47,19 @@ def process_and_save_video(video_instance):
         abnormal_behavior_detected = process_video(
             original_video_url, s3_output_name, upload_time)
 
+        if not isinstance(abnormal_behavior_detected, bool):
+            raise ValueError(f"Unexpected return value from process_video: {abnormal_behavior_detected}")
+
         video_instance.processed_video.name = s3_output_name
         video_instance.abnormal_behavior_detected = abnormal_behavior_detected
         video_instance.upload_time = upload_time
         video_instance.save()
 
-        print(
-            f"Video instance saved with processed video path: {video_instance.processed_video.name}")
+        print(f"Video instance saved with processed video path: {video_instance.processed_video.name}")
 
         return True
     except Exception as e:
-        logger.error(f"Error processing video: {e}")
+        logger.error(f"Error processing video: {str(e)}", exc_info=True)
         return False
 
 # API Views
@@ -89,6 +92,22 @@ def video_list(request):
 @parser_classes([MultiPartParser, FormParser])
 def upload_video(request):
     serializer = VideoCreateSerializer(data=request.data)
+    sts_client = boto3.client(
+        'sts',
+        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+        region_name=settings.AWS_REGION
+    )
+    assumed_role_object = sts_client.assume_role(
+        RoleArn="arn:aws:iam::000557732562:role/cross",
+        RoleSessionName="AssumeRoleSession"
+    )
+    s3_client = boto3.client(
+        's3',
+        aws_access_key_id=assumed_role_object['Credentials']['AccessKeyId'],
+        aws_secret_access_key=assumed_role_object['Credentials']['SecretAccessKey'],
+        aws_session_token=assumed_role_object['Credentials']['SessionToken']
+    )
     if serializer.is_valid():
         print("Form is valid. Preparing to save video instance.")
         video_instance = serializer.save()

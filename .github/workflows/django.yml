@@ -4,11 +4,11 @@ on:
   push:
     branches: 
       - "main"
-      - "release"
+      # - "release"
   pull_request:
     branches: 
       - "main"
-      - "release"
+      # - "release"
 
 jobs:
   build:
@@ -68,6 +68,8 @@ jobs:
         AWS_STORAGE_BUCKET_NAME: ${{ secrets.AWS_STORAGE_BUCKET_NAME }}
         DEFAULT_FILE_STORAGE: ${{ secrets.DEFAULT_FILE_STORAGE }}
         S3_ROLE_ARN: ${{ secrets.S3_ROLE_ARN }}
+        ROLESESSION_NAME: ${{ secrets.ROLESESSION_NAME }}
         CHATGPT_API_KEY: ${{ secrets.CHATGPT_API_KEY }}
+        SERVICE_KEY: ${{ secrets.SERVICE_KEY }}
       run: |
         python manage.py test
