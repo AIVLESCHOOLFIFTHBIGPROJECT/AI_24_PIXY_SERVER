@@ -63,6 +63,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -71,7 +72,6 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     'allauth.account.middleware.AccountMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
 ]
 
@@ -249,7 +249,7 @@ AWS_S3_CUSTOM_DOMAIN = '%s.s3.%s.amazonaws.com' % (
 DEFAULT_FILE_STORAGE = env('DEFAULT_FILE_STORAGE')
 MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
 # ChatGPT
-CHATGPT_API_KEY=env('CHATGPT_API_KEY')
+CHATGPT_API_KEY = env('CHATGPT_API_KEY')
 AWS_ACCESS_KEY_ID = env('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY')
 # 사업자등록번호 조회

@@ -24,7 +24,7 @@ def list_processed_videos():
     )
 
     response = s3_client.list_objects_v2(
-        Bucket=settings.AWS_STORAGE_BUCKET_NAME, Prefix='media/videos/processed/')
+        Bucket=settings.AWS_STORAGE_BUCKET_NAME, Prefix='media/videos_fire/processed/')
 
     if 'Contents' in response:
         video_urls = [
