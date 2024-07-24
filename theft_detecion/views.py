@@ -47,17 +47,19 @@ def process_and_save_video(video_instance):
         abnormal_behavior_detected = process_video(
             original_video_url, s3_output_name, upload_time)
 
+        if not isinstance(abnormal_behavior_detected, bool):
+            raise ValueError(f"Unexpected return value from process_video: {abnormal_behavior_detected}")
+
         video_instance.processed_video.name = s3_output_name
         video_instance.abnormal_behavior_detected = abnormal_behavior_detected
         video_instance.upload_time = upload_time
         video_instance.save()
 
-        print(
-            f"Video instance saved with processed video path: {video_instance.processed_video.name}")
+        print(f"Video instance saved with processed video path: {video_instance.processed_video.name}")
 
         return True
     except Exception as e:
-        logger.error(f"Error processing video: {e}")
+        logger.error(f"Error processing video: {str(e)}", exc_info=True)
         return False
 
 # API Views

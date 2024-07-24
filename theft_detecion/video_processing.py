@@ -146,13 +146,15 @@ def process_video(url, s3_output_name, upload_time):
     bucket_name = parsed_url.netloc.split('.')[0]
     s3_key = parsed_url.path.lstrip('/')
 
-    local_file_name = 'temp_video.mp4'
+    with tempfile.NamedTemporaryFile(suffix='.mp4', delete=False) as temp_input_file:
+        local_file_name = temp_input_file.name
 
     try:
         s3_client.download_file(bucket_name, s3_key, local_file_name)
     except Exception as e:
         print(f"Error downloading file from S3: {e}")
         return s3_output_name, False
+
     # 로컬 파일을 사용하여 VideoCapture 객체 생성
     cap = cv2.VideoCapture(local_file_name)
 
@@ -166,9 +168,10 @@ def process_video(url, s3_output_name, upload_time):
 
     # 동영상 출력 설정
     fourcc = cv2.VideoWriter_fourcc(*'avc1')
-    local_output_path = 'output.mp4'
-    out = cv2.VideoWriter(local_output_path, fourcc, 10,
-                          (width, height))  # FPS를 10으로 설정
+    with tempfile.NamedTemporaryFile(suffix='.mp4', delete=False) as temp_output_file:
+        local_output_path = temp_output_file.name
+    
+    out = cv2.VideoWriter(local_output_path, fourcc, 10, (width, height))  # FPS를 10으로 설정
 
     frame_count = 0
     all_frames = []
@@ -184,15 +187,13 @@ def process_video(url, s3_output_name, upload_time):
 
             # YOLO를 사용하여 사람만 탐지
             results_yolo = yolo_model.predict(frame, conf=0.5)
-            people_boxes = [box for box in results_yolo[0].boxes if int(
-                box.cls[0]) == 0]  # 사람만 선택
+            people_boxes = [box for box in results_yolo[0].boxes if int(box.cls[0]) == 0]  # 사람만 선택
 
             if people_boxes:
                 # 신뢰도가 가장 높은 바운딩 박스 선택
                 best_box = max(people_boxes, key=lambda box: box.conf[0])
                 x1, y1, x2, y2 = map(int, best_box.xyxy[0])
-                cv2.rectangle(frame, (x1, y1), (x2, y2),
-                              (0, 255, 0), 2)  # 바운딩 박스 그리기
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)  # 바운딩 박스 그리기
 
                 # 바운딩 박스 내에서 포즈 추출
                 roi = frame[y1:y2, x1:x2]
@@ -228,8 +229,7 @@ def process_video(url, s3_output_name, upload_time):
                                     pose_landmarks[start_idx].y * (y2 - y1) + y1))
                                 end_point = (int(pose_landmarks[end_idx].x * (x2 - x1) + x1), int(
                                     pose_landmarks[end_idx].y * (y2 - y1) + y1))
-                                cv2.line(frame, start_point,
-                                         end_point, (0, 255, 0), 2)
+                                cv2.line(frame, start_point, end_point, (0, 255, 0), 2)
 
         frame_count += 1
 
@@ -256,8 +256,7 @@ def process_video(url, s3_output_name, upload_time):
     max_score_index = np.argmax(predictions[:, 1])
     max_score = predictions[max_score_index, 1]
     start_index = max(max_score_index - 30, 0)
-    end_index = min(max_score_index + 30 +
-                    sequence_length, len(all_frames) - 1)
+    end_index = min(max_score_index + 30 + sequence_length, len(all_frames) - 1)
 
     label = 'Theft' if max_score > 0.5 else 'Normal'
     color = (0, 0, 255) if max_score > 0.5 else (0, 255, 0)
@@ -269,13 +268,23 @@ def process_video(url, s3_output_name, upload_time):
 
     out.release()
 
+    # 파일 존재 확인
+    if not os.path.exists(local_output_path):
+        print(f"Error: Output file {local_output_path} was not created")
+        return s3_output_name, False
+
     # 이상 행동 감지 여부
-    abnormal_behavior_detected = max_score > 0.80
-    print(
-        f's3_output_name: {s3_output_name}, \n local_input_path: {local_output_path}')
-    upload_file_to_s3_2(local_output_path,
-                        settings.AWS_STORAGE_BUCKET_NAME, s3_output_name)
-    os.remove(local_file_name)
-    os.remove(local_output_path)
+    abnormal_behavior_detected = bool(max_score > 0.80)
+    print(f's3_output_name: {s3_output_name}, \n local_output_path: {local_output_path}')
+    
+    try:
+        upload_file_to_s3_2(local_output_path, settings.AWS_STORAGE_BUCKET_NAME, s3_output_name)
+    except Exception as e:
+        print(f"Error uploading file to S3: {e}")
+        return s3_output_name, False
+    finally:
+        # 임시 파일 삭제
+        os.remove(local_file_name)
+        os.remove(local_output_path)
 
     return abnormal_behavior_detected
