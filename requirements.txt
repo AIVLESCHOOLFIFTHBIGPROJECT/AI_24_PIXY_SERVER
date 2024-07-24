@@ -44,5 +44,5 @@ langchain-community==0.2.7
 langchain-core== 0.2.12
 langchain-text-splitters==0.2.2
 langsmith==0.1.84  
-chormadb==0.5.3
+chromadb==0.5.3
 tiktoken==0.7.0
