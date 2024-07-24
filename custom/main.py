@@ -57,10 +57,10 @@ def main(runtype, script, key):
     # print(api_key)
 
     if runtype=='database':
-        clear_folder('pixycustom/database')
+        clear_folder('custom/database')
 
     embeddings = OpenAIEmbeddings(model="text-embedding-ada-002", openai_api_key=api_key)
-    database = Chroma(persist_directory="pixycustom/database", embedding_function = embeddings )
+    database = Chroma(persist_directory="custom/database", embedding_function = embeddings )
     
     if runtype=='chatbot':
         print(chatbot(question, api_key, database))
