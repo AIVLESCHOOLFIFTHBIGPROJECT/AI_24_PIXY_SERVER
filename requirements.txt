@@ -39,5 +39,10 @@ numpy==1.26.4
 pandas==2.2.2
 scipy==1.14.0
 openai==1.37.0
-langchain==0.2.11
-chormadb==0.5.5
+langchain==0.2.7
+langchain-community==0.2.7
+langchain-core== 0.2.12
+langchain-text-splitters==0.2.2
+langsmith==0.1.84  
+chormadb==0.5.3
+tiktoken==0.7.0
