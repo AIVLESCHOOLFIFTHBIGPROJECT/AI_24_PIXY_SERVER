@@ -5,8 +5,8 @@ import boto3
 from botocore.exceptions import ClientError
 from django.conf import settings
 from urllib.parse import urlparse
-import tempfile
 from venv import logger
+import tempfile
 
 sts_client = boto3.client(
     'sts',
@@ -129,7 +129,8 @@ def detect_fire(s3_input_url, s3_output_name, upload_time):
     # if not s3_key.startswith('media/'):
     # s3_key = f'media/{s3_key}'
     
-    local_file_name = 'temp_video.mp4'
+    with tempfile.NamedTemporaryFile(suffix = '.mp4', delete = False) as temp_input_file:
+        local_file_name = temp_input_file.name
     
     try:
         s3.download_file(bucket_name, s3_key, local_file_name)
@@ -146,9 +147,13 @@ def detect_fire(s3_input_url, s3_output_name, upload_time):
     fps = cap.get(cv2.CAP_PROP_FPS)
 
     fourcc = cv2.VideoWriter_fourcc(*'avc1')
-    local_output_path = 'output.mp4'
-    out = cv2.VideoWriter(local_output_path, fourcc, fps, (width, height))
-
+    
+    with tempfile.NamedTemporaryFile(suffix = '.mp4', delete = False) as temp_output_file:
+        local_output_path = temp_output_file.name
+        
+    out = cv2.VideoWriter(local_output_path, fourcc, fps, (width, height))    
+    
+    
     # Variables for fire detection
     cons_frame_count = 0
     fire_detected = False
@@ -182,13 +187,32 @@ def detect_fire(s3_input_url, s3_output_name, upload_time):
 
     cap.release()
     out.release()
-    print(f's3_output_name: {s3_output_name}, \n local_input_path: {local_output_path}')
     
-    upload_file_to_s3_2(local_output_path,
-                        settings.AWS_STORAGE_BUCKET_NAME, s3_output_name)
+    if not os.path.exists(local_output_path):
+        print(f"Error: Output file {local_output_path} was not created")
+        return s3_output_name, False
+    
+    # print(f's3_output_name: {s3_output_name}, \n local_input_path: {local_output_path}')
+    
+    # upload_file_to_s3_2(local_output_path,
+    #                     settings.AWS_STORAGE_BUCKET_NAME, s3_output_name)
 
-    os.remove(local_file_name)
-    os.remove(local_output_path)
+    # os.remove(local_file_name)
+    # os.remove(local_output_path)
+
+    # return fire_detected
+    
+    print(f's3_output_name: {s3_output_name}, \n local_output_path: {local_output_path}')
+
+    try:
+        upload_file_to_s3_2(local_output_path, settings.AWS_STORAGE_BUCKET_NAME, s3_output_name)
+    except Exception as e:
+        print(f"Error uploading file to S3: {e}")
+        return s3_output_name, False
+    finally:
+        # 임시 파일 삭제
+        os.remove(local_file_name)
+        os.remove(local_output_path)
 
     return fire_detected
 

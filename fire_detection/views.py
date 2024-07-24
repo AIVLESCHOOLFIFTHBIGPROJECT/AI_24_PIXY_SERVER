@@ -43,18 +43,20 @@ def process_and_save_video(video_instance):
         # 화재 감지 여부
         fire_detected = detect_fire(original_video_url, s3_output_name, upload_time)
 
+        if not isinstance(fire_detected, bool):
+            raise ValueError(f"Unexpected return value from detect_fire: {fire_detected}")
+        
         # 비디오 모델 저장
         video_instance.processed_video.name = s3_output_name # orgin_s3_output_name
         video_instance.fire_detected = fire_detected
         video_instance.upload_time = upload_time
         video_instance.save()
-
-        print(
-            f"Video instance saved with processed video path: {video_instance.processed_video.name}")
+        
+        print(f"Video instance saved with processed video path: {video_instance.processed_video.name}")
 
         return True
     except Exception as e:
-        logger.error(f"Error processing video: {e}")
+        logger.error(f"Error processing video: {str(e)}", exc_info=True)
         return False
 
 
