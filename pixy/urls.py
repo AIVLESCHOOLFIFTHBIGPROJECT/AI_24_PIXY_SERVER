@@ -44,7 +44,8 @@ urlpatterns = [
     path('api/notifications/', include('notifications.urls')),
     path('api/fire_detection/', include('fire_detection.urls')),
     path('api/theft_detection/', include('theft_detecion.urls')),
-    path('api/pixycustom/', include('pixycustom.urls')),
+    # path('api/pixycustom/', include('pixycustom.urls')),
+    path('api/custom/', include('custom.urls')),
 
     # Swagger UI
     re_path(r'^swagger(?P<format>\.json|\.yaml)$',
