@@ -42,10 +42,10 @@ def ask_question(request):
 
         try:
             embeddings = OpenAIEmbeddings(model="text-embedding-ada-002", openai_api_key=api_key)
-            database = Chroma(persist_directory="pixycustom/database", embedding_function=embeddings)
+            database = Chroma(persist_directory="custom/database", embedding_function=embeddings)
 
             if 'runtype' in request.data and request.data['runtype'] == 'database':
-                clear_folder('pixycustom/database')
+                clear_folder('custom/database')
                 make_database(api_key, database)
                 return Response({'status': 'Database created'}, status=status.HTTP_200_OK)
             else:
