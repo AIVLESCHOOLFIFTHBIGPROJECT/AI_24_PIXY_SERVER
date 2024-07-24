@@ -3,6 +3,7 @@ import numpy as np
 import os
 import sqlite3
 from datetime import datetime
+# from django.conf import settings
 from django.conf import settings
 
 import argparse
@@ -45,14 +46,14 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description="Chatbot Model Training and Evaluation Script")
     parser.add_argument("--runtype", type=str, required=True, default='chatbot', choices=['chatbot', 'database'])
     parser.add_argument("--script", type=str, required=True)
+    parser.add_argument("--key", type=str, required=True)
     return parser.parse_args()
 
-def main(runtype, script):
+def main(runtype, script, key):
     
     question=script #추후 입력방식 수정
-    
+    api_key = key
     # api_key = settings.CHATGPT_API_KEY
-    api_key = settings.CHATGPT_API_KEY
     # print(api_key)
 
     if runtype=='database':
@@ -74,4 +75,4 @@ def main(runtype, script):
 
 if __name__ == "__main__":
     args = parse_arguments()
-    main(args.runtype, args.script)
+    main(args.runtype, args.script, args.key)

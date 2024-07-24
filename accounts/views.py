@@ -563,7 +563,13 @@ def non_user_sendcode(request):
         code = str(random.randint(100000, 999999))
         # 5분 동안 유효
         cache.set(f'verification_code_{email}', code, timeout=300)
-        message = f'인증번호는 {code}'
+        message = (
+                f'안녕하세요, 귀하의 계정 회원가입 요청을 받았습니다. '
+                f'아래의 인증 코드를 회원가입 페이지에 입력해 주세요:\n'
+                f'인증 코드: {code} 이 코드는 5분 후 만료됩니다. '
+                f'이 메일을 요청하지 않았다면, 본 메일을 무시하셔도 좋습니다. 감사합니다.\n'
+                f'이 메일은 pixy.kro.kr에서 발송되었습니다. 추가 문의사항이 있으시면 언제든지 저희 웹사이트를 통해 연락주시기 바랍니다.'
+        )
         send_mail(
             'Your verification code',
             message,
@@ -623,7 +629,13 @@ def send_verification_code(request):
             code = str(random.randint(100000, 999999))
             # 5분 동안 유효
             cache.set(f'verification_code_{email}', code, timeout=300)
-            message = f'인증 번호는 {code}'
+            message = (
+                f'안녕하세요, 귀하의 계정 비밀번호 재설정 요청을 받았습니다. '
+                f'아래의 인증 코드를 비밀번호 재설정 페이지에 입력해 주세요:\n'
+                f'인증 코드: {code} 이 코드는 5분 후 만료됩니다. '
+                f'이 메일을 요청하지 않았다면, 본 메일을 무시하셔도 좋습니다. 감사합니다.\n'
+                f'이 메일은 pixy.kro.kr에서 발송되었습니다. 추가 문의사항이 있으시면 언제든지 저희 웹사이트를 통해 연락주시기 바랍니다.'
+            )
             send_mail(
                 'Your verification code',
                 message,
