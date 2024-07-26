@@ -171,7 +171,8 @@ def process_video(url, s3_output_name, upload_time):
 
     # 동영상 출력 설정
     fourcc = cv2.VideoWriter_fourcc(*'avc1')
-    local_output_path = 'output.mp4'
+    with tempfile.NamedTemporaryFile(suffix='.mp4', delete=False) as temp_output_file:
+        local_output_path = temp_output_file.name
     out = cv2.VideoWriter(local_output_path, fourcc, 10,
                           (width, height))  # FPS를 10으로 설정
 
@@ -314,6 +315,7 @@ def safe_filename(filename):
 
 def process_and_save_video(video_instance):
     try:
+        print('process_and_save_video-running')
         original_video_url = video_instance.original_video.url
         processed_video_name = safe_filename(os.path.splitext(
             os.path.basename(video_instance.original_video.name))[0]) + ".mp4"
@@ -328,14 +330,16 @@ def process_and_save_video(video_instance):
             original_video_url, s3_output_name, upload_time)
 
         if not isinstance(abnormal_behavior_detected, bool):
-            raise ValueError(f"Unexpected return value from process_video: {abnormal_behavior_detected}")
+            raise ValueError(
+                f"Unexpected return value from process_video: {abnormal_behavior_detected}")
 
         video_instance.processed_video.name = s3_output_name
         video_instance.abnormal_behavior_detected = abnormal_behavior_detected
         video_instance.upload_time = upload_time
         video_instance.save()
 
-        print(f"Video instance saved with processed video path: {video_instance.processed_video.name}")
+        print(
+            f"Video instance saved with processed video path: {video_instance.processed_video.name}")
 
         return True
     except Exception as e:
@@ -390,6 +394,7 @@ def upload_video(request):
     )
     if serializer.is_valid():
         print("Form is valid. Preparing to save video instance.")
+        print(serializer)
         video_instance = serializer.save()
 
         try:
